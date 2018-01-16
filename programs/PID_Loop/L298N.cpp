@@ -4,47 +4,46 @@
 
 #include "L298N.h"
 
-#define ENA		 pin_out[0]
-#define IN_A1	 pin_out[1]
-#define IN_A2	 pin_out[2]
-#define IN_B2	 pin_out[3]
-#define IN_B1	 pin_out[4]
-#define ENB		 pin_out[5]
+L298N::L298N(int ENABLE, int IN1, int IN2) {
+	pinMode(ENABLE,		OUTPUT);
+	pinMode(IN1,		OUTPUT);
+	pinMode(IN2,		OUTPUT);
 
-L298N::L298N() {
-	pinMode(ENA,	OUTPUT);
-	pinMode(IN_A1,	OUTPUT);
-	pinMode(IN_A2,	OUTPUT);
-	pinMode(IN_B2,	OUTPUT);
-	pinMode(IN_B1,	OUTPUT);
-	pinMode(ENB,	OUTPUT);
+	this->ENABLE	= ENABLE;
+	this->IN1		= IN1;
+	this->IN2		= IN2;
+
 }
 
-void L298N::increment_up(int enable) {
+void L298N::increment_up() {
 	for (int i = 0; i < 255; i++) {
-		analogWrite(enable, i);
+		analogWrite(this->ENABLE, i);
 		delay(100);
 	}
 }
 
-void L298N::increment_down(int enable) {
+void L298N::increment_down() {
 	for (int i = 255; i > 0; i--) {
-		analogWrite(enable, i);
+		analogWrite(this->ENABLE, i);
 		delay(100);
 	}
 }
 
-void L298N::forward(int input1, int input2) {
-	digitalWrite(input1, HIGH);
-	digitalWrite(input2, LOW);
+void L298N::forward() {
+	digitalWrite(this->IN1, HIGH);
+	digitalWrite(this->IN2, LOW);
 }
 
-void L298N::reverse(int input1, int input2) {
-	digitalWrite(input2, HIGH);
-	digitalWrite(input1, LOW);
+void L298N::reverse() {
+	digitalWrite(this->IN1, HIGH);
+	digitalWrite(this->IN2, LOW);
 }
 
-void L298N::stop(int input1, int input2) {
-	digitalWrite(input2, HIGH);
-	digitalWrite(input1, HIGH);
+void L298N::stop() {
+	digitalWrite(this->IN1, HIGH);
+	digitalWrite(this->IN2, HIGH);
+}
+
+void L298N::set_speed(float speed) {
+
 }

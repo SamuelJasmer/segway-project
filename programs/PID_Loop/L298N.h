@@ -17,15 +17,17 @@
 class L298N {
 
 public:
-	L298N();
-	void increment_up(int enable);
-	void increment_down(int enable);
-	void forward(int input1, int input2);
-	void reverse(int input1, int input2);
-	void stop(int input1, int input2);
+	L298N(int ENABLE, int CC, int CCW);
+	void increment_up();
+	void increment_down();
+	void forward();
+	void reverse();
+	void stop();
+	void set_speed(float speed);
 
-	int pin_out[6] = {};
 private:
-
-
+	int ENABLE;
+	int IN1;
+	int IN2;
 };
+

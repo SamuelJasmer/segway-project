@@ -1,51 +1,25 @@
-#include <Servo.h>
-#include <PID.h>
-#include <L298N.h>
+#include "PID.h"
+#include "L298N.h"
 
-Servo myServo;
+#define ENA		 10
+#define IN_A1	 9
+#define IN_A2	 8
+#define IN_B2	 7
+#define IN_B1	 6
+#define ENB		 5
 
-int servoPin = 9;
-int potPin = 0;
-
-int sp = 90;
-float mp = 0.0;
-float error_final = 0;
-float delta_t = 0;
-
-float kp = -1.0;
-float ki = 0.0;
-float kd = 0.0;
+L298N MotorA(ENA, IN_A1, IN_A2);
+L298N MotorB(ENB, IN_B1, IN_B2);
 
 void setup() {
 	Serial.begin(9600);
-	pinMode(servoPin, OUTPUT);
-	myServo.attach(servoPin);
-	myServo.write(sp);
+	
+
 }
 
 void loop() {
 
-	/*
-	int pot_in = readPot();
-		//Serial.print(delta_t);
-		//Serial.print(" ");
-		//Serial.print(pot_in);
-		//Serial.print(" ");
 
-	int error = calculate_error(pot_in, sp);
-		Serial.print(error);
-		Serial.print(" ");
-
-	float pid = calculate_pid(error, delta_t, kp, ki, kd);
-		Serial.print(pid);
-		Serial.print(" ");
-
-	int output_angle = calculate_output_angle(pid, sp);
-		Serial.print(output_angle);
-		Serial.println();
-
-	setMotor(output_angle);
-	*/	
 }
 
 /*
