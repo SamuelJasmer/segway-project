@@ -35,8 +35,8 @@ void L298N::forward() {
 }
 
 void L298N::reverse() {
-	digitalWrite(this->IN1, HIGH);
-	digitalWrite(this->IN2, LOW);
+	digitalWrite(this->IN1, LOW);
+	digitalWrite(this->IN2, HIGH);
 }
 
 void L298N::stop() {
@@ -45,5 +45,5 @@ void L298N::stop() {
 }
 
 void L298N::set_speed(float speed) {
-
+	analogWrite(this->ENABLE, speed);
 }

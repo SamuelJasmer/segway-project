@@ -7,18 +7,110 @@
 #define IN_B2	 7
 #define IN_B1	 6
 #define ENB		 5
+#define ANALOG_0 0
 
 L298N MotorA(ENA, IN_A1, IN_A2);
 L298N MotorB(ENB, IN_B1, IN_B2);
 
-void setup() {
-	Serial.begin(9600);
-	
+float kp = 0.0;
+float ki = 0.0;
+float kd = 0.0;
 
+int set_point = 90;
+float motor_point = 0;
+
+PID pid(kp, ki, kd, ANALOG_0);
+float pid_speed = 0;
+float speed = 0;
+
+void setup() {
+	Serial.begin(19200);
 }
 
 void loop() {
+	//Serial.print(analogRead(0));
+	pid_speed = pid.calculate_pid(set_point);
+	//Serial.print(pid_speed);
+	//Serial.print(",");
+	pid_speed = map(pid_speed, -57, 237, 0, 256);
+	//Serial.println(pid_speed);
 
+	if(abs(pid.error) < 3) {
+		MotorA.stop();
+	}
+
+	else {
+		if(pid.get_error() > 0){
+			MotorA.forward();
+		
+			MotorA.set_speed(pid_speed);	
+		}
+		else if(pid.get_error() < 0){
+			MotorA.reverse();
+			MotorA.set_speed(pid_speed);
+		}	
+		else {
+			MotorA.stop();
+		}
+	}
+
+	print_pid_data();
+
+	
+	
+	//move_motor_B();
+	//move_motor_A();
+
+}
+
+void move_motor_A() {
+
+	int raw = analogRead(1);
+	
+	if(raw < 500){
+		MotorA.reverse();
+		int speed = map(raw, 500, 0, 0, 256);
+		MotorA.set_speed(speed);
+	}
+	else if(raw > 524){
+		MotorA.forward();
+		int speed = map(raw, 524, 1024, 256, 0);
+		MotorA.set_speed(speed);
+	}
+	else{
+		MotorA.stop();
+	}
+}
+
+void move_motor_B() {
+
+	int raw = analogRead(1);
+	
+	if(raw < 500){
+		MotorB.reverse();
+		int speed = map(raw, 0, 500, 256, 0);
+		MotorB.set_speed(speed);
+	}
+	else if(raw > 524){
+		MotorB.forward();
+		int speed = map(raw, 524, 1024, 0, 256);
+		MotorB.set_speed(speed);
+	}
+	else{
+		MotorB.stop();
+	}
+}
+
+void print_pid_data(){
+	Serial.print(pid.error);
+	Serial.print(",");
+	Serial.print(pid.p);
+	Serial.print(",");
+	Serial.print(pid.i);
+	Serial.print(",");
+	Serial.print(pid.d);
+	Serial.print(",");
+	Serial.println(pid.pid);
 
 }
 
