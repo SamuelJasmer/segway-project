@@ -8,6 +8,9 @@
 #define IN_B1	 6
 #define ENB		 5
 #define ANALOG_0 0
+#define ANALOG_1 1
+#define ANALOG_2 2
+#define ANALOG_3 3
 
 L298N MotorA(ENA, IN_A1, IN_A2);
 L298N MotorB(ENB, IN_B1, IN_B2);
@@ -19,7 +22,7 @@ float kd = 0.0;
 int set_point = 90;
 float motor_point = 0;
 
-PID pid(kp, ki, kd, ANALOG_0);
+PID pid(ANALOG_0);
 float pid_speed = 0;
 float speed = 0;
 
@@ -28,12 +31,14 @@ void setup() {
 }
 
 void loop() {
-	//Serial.print(analogRead(0));
+	kp = mapfloat(analogRead(ANALOG_1), 0, 1023, .0001, 10.00);
+	ki = mapfloat(analogRead(ANALOG_2), 0, 1023, .0001, 10.00);
+	kd = mapfloat(analogRead(ANALOG_3), 0, 1023, .0001, 10.00);
+
+	pid.set_k_values(kp, ki, kd);
+
 	pid_speed = pid.calculate_pid(set_point);
-	//Serial.print(pid_speed);
-	//Serial.print(",");
-	pid_speed = map(pid_speed, -57, 237, 0, 256);
-	//Serial.println(pid_speed);
+	pid_speed = map(pid_speed, -57, 237, 0, 128);
 
 	if(abs(pid.error) < 3) {
 		MotorA.stop();
@@ -55,11 +60,6 @@ void loop() {
 	}
 
 	print_pid_data();
-
-	
-	
-	//move_motor_B();
-	//move_motor_A();
 
 }
 
@@ -101,6 +101,11 @@ void move_motor_B() {
 	}
 }
 
+float mapfloat(float x, float in_min, float in_max, float out_min, float out_max) 
+{
+ return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
 void print_pid_data(){
 	Serial.print(pid.error);
 	Serial.print(",");
@@ -110,91 +115,12 @@ void print_pid_data(){
 	Serial.print(",");
 	Serial.print(pid.d);
 	Serial.print(",");
-	Serial.println(pid.pid);
+	Serial.print(pid.pid);
+	Serial.print(",");
+	Serial.print(kp);
+	Serial.print(",");
+	Serial.print(ki);
+	Serial.print(",");
+	Serial.println(kd);
 
 }
-
-/*
-void setMotor(int angle){
-	myServo.write(angle);
-}
-
-
-int readPot(){
-
-	int t_initial = micros();
-	int potIn = analogRead(potPin);
-	int t_final = micros();
-
-	delta_t = (t_final - t_initial)/1000.0;
-	
-	return potIn;
-}
-
-
-int calculate_error(int potIn, int sp){
-	
-	int cp = map(potIn, 300, 840, 0, 180);
-	Serial.print(cp);
-	Serial.print(" ");
-	
-	int error = cp - sp;
-	
-	return error;
-
-	
-}
-
-
-float calculate_pid(int error, float delta_t, float kp, float ki, float kd){
-
-	float p = p_loop(error, kp);
-	float i = i_loop(error, delta_t, ki);
-	float d = d_loop(error, delta_t, kd);
-	float pid = p + i+ d;
-	
-	return pid;
-}
-
-int calculate_output_angle(float pid, int sp){
-	int output_angle = sp + pid;
-	
-	return output_angle;
-}
-
-
-int p_loop(int error, float kp){
-	int p;
-	p = kp*error;
-
-		Serial.print(p);
-		Serial.print(" ");
-  
-	return p;
-}
-
-
-float i_loop(int error, int delta_t, float ki){
-	float error_integral;
-	error_integral += ki*error*(delta_t);
-
-		Serial.print(error_integral);
-		Serial.print(" ");
-
-	return error_integral;
-}
-
-
-float d_loop(int error, float delta_t, float kd){
-	float error_initial = error;
-	float error_derivative = kd*((error_final - error_initial) / delta_t);
-	error_final = error_initial;
-
-	Serial.print(error_derivative);
-	Serial.print(" ");
-
-	return error_derivative;
-}
-
-*/
-

@@ -17,7 +17,8 @@
 class PID {
 
 public:
-	PID(float kp, float ki, float kd, int sensor_pin);
+	PID(int sensor_pin);
+	void set_k_values(float kp, float ki, float kd);
 	float measure_sensor();
 	int calculate_error(int current_point, int set_point);
 	float p_loop();

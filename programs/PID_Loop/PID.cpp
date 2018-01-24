@@ -4,16 +4,20 @@
 
 #include "PID.h"
 
-PID::PID(float kp, float ki, float kd, int sensor_pin) {
+PID::PID(int sensor_pin) {
 
-	this->kp = kp;
-	this->ki = ki;
-	this->kd = kd;
 	this->sensor_pin = sensor_pin;
 	this->delta_t = 0;
 	this->error = 0;
 	this->error_final = 0;
 	this->error_integral = 0;
+}
+
+void PID::set_k_values(float kp, float ki, float kd) {
+
+	this->kp = kp;
+	this->ki = ki;
+	this->kd = kd;
 }
 
 float PID::measure_sensor() {
