@@ -5,6 +5,7 @@
       "intelliSenseMode": "msvc-x64",
       "includePath": [
         "${projectRoot}..\\PID_Loop",
+        "${projectRoot}..\\..\\..\\..\\Documents\\Arduino\\libraries\\ArduinoSTL-1.0.5\\src",
         "${projectRoot}..\\..\\..\\..\\..\\..\\Program Files (x86)\\Arduino\\libraries",
         "${projectRoot}..\\..\\..\\..\\..\\..\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\libraries",
         "${projectRoot}..\\..\\..\\..\\Documents\\Arduino\\libraries",

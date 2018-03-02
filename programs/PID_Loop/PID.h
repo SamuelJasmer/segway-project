@@ -53,6 +53,6 @@ private:
 	
 	int error_final = 0;
 	float error_integral = 0;
-	float convert_sensor_in_to_degrees(int raw);
+	float convert_sensor_to_degrees(int raw);
 
 };

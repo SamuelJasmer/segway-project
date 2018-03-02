@@ -1,5 +1,11 @@
 #include "PID.h"
 #include "L298N.h"
+#include <ArduinoSTL.h>
+#include <cstring>
+#include <iostream>
+#include <stdlib.h>
+#include <string>
+#include <vector>
 
 #define ENA		 10
 #define IN_A1	 9
@@ -26,31 +32,47 @@ PID pid(ANALOG_0);
 float pid_speed = 0;
 float speed = 0;
 
+std::vector<char>* serialInputBuf;
+void checkSerial();
+void parseCSV(std::string input, std::vector<std::string>* argv);
+
 void setup() {
 	Serial.begin(19200);
+	serialInputBuf = new std::vector<char>();
 }
 
 void loop() {
-	kp = mapfloat(analogRead(ANALOG_1), 0, 1023, .0001, 10.00);
-	ki = mapfloat(analogRead(ANALOG_2), 0, 1023, .0001, 10.00);
-	kd = mapfloat(analogRead(ANALOG_3), 0, 1023, .0001, 10.00);
+
+	checkSerial();
 
 	pid.set_k_values(kp, ki, kd);
 
 	pid_speed = pid.calculate_pid(set_point);
-	pid_speed = map(pid_speed, -57, 237, 0, 128);
+	//pid_speed = map(pid_speed, 0, 512, 64, 256);
 
-	if(abs(pid.error) < 3) {
+	if(pid.error < 2) {
 		MotorA.stop();
 	}
 
 	else {
-		if(pid.get_error() > 0){
+		if(pid.cp > set_point){
+			if(pid_speed < 64){
+				pid_speed = 64;
+			}
+			else{
+				pid_speed = pid_speed;
+			}
+
 			MotorA.forward();
-		
 			MotorA.set_speed(pid_speed);	
 		}
-		else if(pid.get_error() < 0){
+		else if(pid.cp < set_point){
+			if(pid_speed < 64){
+				pid_speed = 64;
+			}
+			else{
+				pid_speed = pid_speed;
+			}
 			MotorA.reverse();
 			MotorA.set_speed(pid_speed);
 		}	
@@ -82,6 +104,12 @@ void move_motor_A() {
 	}
 }
 
+
+
+
+
+
+
 void move_motor_B() {
 
 	int raw = analogRead(1);
@@ -107,7 +135,7 @@ float mapfloat(float x, float in_min, float in_max, float out_min, float out_max
 }
 
 void print_pid_data(){
-	Serial.print(pid.error);
+	Serial.print(pid.cp);
 	Serial.print(",");
 	Serial.print(pid.p);
 	Serial.print(",");
@@ -117,10 +145,60 @@ void print_pid_data(){
 	Serial.print(",");
 	Serial.print(pid.pid);
 	Serial.print(",");
+	Serial.print(pid_speed);
+	Serial.print(",");
 	Serial.print(kp);
 	Serial.print(",");
 	Serial.print(ki);
 	Serial.print(",");
 	Serial.println(kd);
+	//Serial.println(",");
+	//Serial.println(analogRead(0));
 
+}
+
+void checkSerial()
+{
+    char c;
+    while (Serial.available() > 0)
+    {
+        c = (char)Serial.read();
+        if (c >= 0x20 && c < 0x7f)
+        {
+            serialInputBuf->push_back(c);
+        }
+        else if (c == '\n')
+        {
+            std::vector<std::string> inputSep;
+            std::string input(serialInputBuf->begin(), serialInputBuf->end());
+			serialInputBuf->clear();
+
+			parseCSV(input, &inputSep);
+
+            if (inputSep.size() >= 3)
+            {
+				kp = atof(inputSep[0].c_str());
+				ki = atof(inputSep[1].c_str());
+				kd = atof(inputSep[2].c_str());
+            }
+        }
+    }
+}
+
+void parseCSV(std::string input, std::vector<std::string>* argv)
+{
+    std::string current = "";
+    for (int i = 0; i < input.size(); ++i)
+    {
+        if (input[i] == ',')
+        {
+            argv->push_back(current);
+            current = "";
+        }
+        else
+        {
+            current += input[i];
+        }
+    }
+    argv->push_back(current);
 }

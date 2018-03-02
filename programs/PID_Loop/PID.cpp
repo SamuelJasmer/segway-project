@@ -28,12 +28,12 @@ float PID::measure_sensor() {
 
 	this->delta_t = (t_final - t_initial) / 1000.0;
 
-	this->cp = convert_sensor_in_to_degrees(sensor);
+	this->cp = convert_sensor_to_degrees(sensor);
 
 	return this->cp;
 }
 
-float PID::convert_sensor_in_to_degrees(int raw) {
+float PID::convert_sensor_to_degrees(int raw) {
 
 	float cp = map(raw, 57, 1023, -57, 237);
 
@@ -42,7 +42,7 @@ float PID::convert_sensor_in_to_degrees(int raw) {
 
 int PID::calculate_error(int current_point, int set_point) {
 
-	this->error = current_point - set_point;
+	this->error = abs(current_point - set_point);
 
 	return this->error;
 }
@@ -58,6 +58,25 @@ float PID::p_loop() {
 float PID::i_loop() {
 	
 	this->error_integral += this->ki*this->error*this->delta_t;
+
+	if (this->error = 0) {
+		error_integral = 0;
+	}
+	else {
+		error_integral = error_integral;
+	}
+	//this->error_integral = this->ki*this->error_integral;
+
+	/*
+	if(this->error_integral > 256) {
+
+		this->error_integral = 256;
+	}
+	else {
+		this->error_integral = this->error_integral;
+	}
+	*/
+	
 
 	return this->error_integral;
 }
@@ -81,14 +100,18 @@ float PID::calculate_pid(int set_point) {
 	this->d		= PID::d_loop();
 	this->pid	= this->p + this->i + this->d;
 
-	int t_initial = micros();
+	float t_initial = micros();
 	this->output_final = this->output_initial + this->pid;
-	int t_final = micros();
+	float t_final = micros();
 	this->output_delta_t = t_final - t_initial;
 
-	this->output_initial = output_final;
+	this->output_initial = this->output_final;
 	
-	return this->output_initial;
+	float delta_pid = PID::pid_derivative();
+
+	//conversions to velocity units
+
+	return this->pid;
 
 }
 
@@ -104,7 +127,7 @@ int PID::get_error() {
 
 float PID::pid_derivative() {
 	
-	float pid_velocity = (this->output_final - this->output_initial) / this->output_delta_t;
+	float pid_velocity = (this->output_final - this->output_initial);
 
 	return pid_velocity;
 }
