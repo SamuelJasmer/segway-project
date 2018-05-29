@@ -41,8 +41,9 @@ float PID::convert_sensor_to_degrees(int raw) {
 }
 
 int PID::calculate_error(int current_point, int set_point) {
+	this->set_point = set_point;
 
-	this->error = abs(current_point - set_point);
+	this->error = abs(current_point - this->set_point);
 
 	return this->error;
 }
@@ -56,14 +57,15 @@ float PID::p_loop() {
 }
 
 float PID::i_loop() {
-	
-	this->error_integral += this->ki*this->error*this->delta_t;
 
-	if (this->error = 0) {
-		error_integral = 0;
+	if (this->cp > this->set_point) {
+		this->error_integral -= this->ki*this->error*this->delta_t;
+	}
+	else if (this->cp < this->set_point) {
+		this->error_integral += this->ki*this->error*this->delta_t;
 	}
 	else {
-		error_integral = error_integral;
+		error_integral = 0;
 	}
 	//this->error_integral = this->ki*this->error_integral;
 
@@ -100,19 +102,7 @@ float PID::calculate_pid(int set_point) {
 	this->d		= PID::d_loop();
 	this->pid	= this->p + this->i + this->d;
 
-	float t_initial = micros();
-	this->output_final = this->output_initial + this->pid;
-	float t_final = micros();
-	this->output_delta_t = t_final - t_initial;
-
-	this->output_initial = this->output_final;
-	
-	float delta_pid = PID::pid_derivative();
-
-	//conversions to velocity units
-
 	return this->pid;
-
 }
 
 float PID::get_delta_t() {
@@ -123,11 +113,4 @@ float PID::get_delta_t() {
 int PID::get_error() {
 
 	return this->error;
-}
-
-float PID::pid_derivative() {
-	
-	float pid_velocity = (this->output_final - this->output_initial);
-
-	return pid_velocity;
 }

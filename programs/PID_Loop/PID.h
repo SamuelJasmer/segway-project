@@ -33,6 +33,7 @@ public:
 	float ki;
 	float kd;
 	int sensor_pin;
+	int set_point;
 
 	float p = 0;
 	float i = 0;

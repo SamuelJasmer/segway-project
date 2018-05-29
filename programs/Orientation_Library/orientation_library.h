@@ -44,6 +44,7 @@ class Orientation {
 		void initialize();
 		float low_pass_filter(float initial_data, float final_data, float beta);
 
+
 	private:
 		float delta_t = 0;
 		
