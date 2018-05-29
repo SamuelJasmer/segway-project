@@ -21,14 +21,15 @@ struct vector {
 		float y;
 		float z;
 		float magnitude();
+
 		void set_vector(float vector_array[]);
-
-		float dot_product(vector v);
-		vector cross_product(vector v);
-		float angle_between_vectors(vector v);
-
 		void convert_to_degrees();
 		void convert_to_radians();
+
+		vector cross_product(vector v);
+
+		float dot_product(vector v);
+		float angle_between_vectors(vector v);
 };
 
 class Orientation {
@@ -38,8 +39,11 @@ class Orientation {
 		vector measure_gyro();
 		vector measure_accelerometer();
 		vector measure_magnetometer();
+		vector angular_acceleration();
+		vector integrate_vector();
+
+		float calculate_Moment_of_Inertia()
 		float integrate(float u);
-		vector integrate_vector(vector u);
 		float get_delta_t();
 		void initialize();
 		float low_pass_filter(float initial_data, float final_data, float beta);

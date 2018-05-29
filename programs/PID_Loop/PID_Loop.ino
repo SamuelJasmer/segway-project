@@ -39,7 +39,6 @@ void parseCSV(std::string input, std::vector<std::string>* argv);
 void setup() {
 	Serial.begin(19200);
 	serialInputBuf = new std::vector<char>();
-
 }
 
 void loop() {
@@ -59,7 +58,7 @@ void loop() {
 	else if (pid_speed < 80) {
 		pid_speed = 0;
 	}
-	
+
 	if(pid.cp < set_point) {
 		MotorA.forward();
 		MotorA.set_speed(pid_speed);	
@@ -73,7 +72,6 @@ void loop() {
 	}
 
 	print_pid_data();
-
 }
 
 void print_pid_data(){
@@ -96,7 +94,6 @@ void print_pid_data(){
 	Serial.println(kd);
 	//Serial.println(",");
 	//Serial.println(analogRead(0));
-
 }
 
 void checkSerial()

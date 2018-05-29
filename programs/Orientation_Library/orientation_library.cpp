@@ -35,7 +35,6 @@ void Orientation::initialize() {
 	angular_velocity_initial.x = 0;
 	angular_velocity_initial.y = 0;
 	angular_velocity_initial.z = 0;
-
 }
 
 vector Orientation::measure_gyro() {
@@ -135,7 +134,6 @@ float Orientation::calculate_Moment_of_Inertia() {
 	float Moment_of_Inertia = (1/4)*(mass*radius^2) + (1/12)*(mass*length^2);
 
 	return Moment_of_Inertia;
-
 }
 
 float Orientation::integrate(float u) {
@@ -211,5 +209,3 @@ void vector::set_vector(float vector_array[]) {
 	this->y = vector_array[1];
 	this->z = vector_array[2];
 }
-
-

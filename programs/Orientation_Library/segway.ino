@@ -11,6 +11,7 @@ Orientation segway_orientation;
 vector i_vector;
 vector j_vector;
 vector k_vector;
+
 vector accel_angles;
 vector mag_angles;
 vector angular_velocity;
@@ -108,7 +109,6 @@ void calculate_angular_motion() {
 	vector angular_velocity = segway_orientation.measure_gyro();
 	vector angular_displacement = segway_orientation.integrate_vector(angular_velocity);
 	angular_displacement.convert_to_degrees();
-
 }
 
 void calibrate_magnetometer(vector magnetic) {
@@ -193,16 +193,3 @@ void print_angular_velocity() {
 	Serial.print(angular_velocity.z);
 }
 
-void serialEvent() {
-	while (Serial.available()) {
-		// get the new byte:
-		char inChar = (char)Serial.read();
-		// add it to the inputString:
-		inputString += inChar;
-		// if the incoming character is a newline, set a flag so the main loop can
-		// do something about it:
-		if (inChar == '\n') {
-			stringComplete = true;
-		}
-	}
-}
