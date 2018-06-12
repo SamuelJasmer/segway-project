@@ -40,17 +40,22 @@ class Orientation {
 		vector measure_accelerometer();
 		vector measure_magnetometer();
 		vector angular_acceleration();
-		vector integrate_vector();
+		vector integrate_vector(vector u);
+		vector smooth_gyro(vector gyro_vector);
 
-		float calculate_Moment_of_Inertia()
+		void initialize();
+		float calculate_Moment_of_Inertia();
 		float integrate(float u);
 		float get_delta_t();
-		void initialize();
-		float low_pass_filter(float initial_data, float final_data, float beta);
+		float moving_average_3n(float data_in[3]);
 
+		vector gyro_vector;
+		vector angular_velocity_initial;
+		vector angular_velocity_final;
 
 	private:
-		float delta_t = 0;
-		
-		
+		float delta_t = 0;	
+		float gyro_buffer_x[3];
+		float gyro_buffer_y[3];
+		float gyro_buffer_z[3];
 };

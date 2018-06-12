@@ -2,7 +2,7 @@
  * orientation_library.cpp
  */
 
-#include "orientation_library.h"
+#include "Orientation_Library.h"
 #include <Adafruit_Sensor.h>
 #include <Adafruit_FXOS8700.h>
 #include <Adafruit_FXAS21002C.h>
@@ -17,24 +17,32 @@ Orientation::Orientation() {
 }
 
 void Orientation::initialize() {
-	//Serial.println("Gyroscope Test"); Serial.println("");
-
+	
 	if (!gyro.begin()) {
 		Serial.println("There was a problem detecting the FXAS21002C ... check your connections");
 		while (1);
 	}
-
-	//Serial.println("FXOS8700 Test"); Serial.println("");
-
+	
 	if (!accelmag.begin(ACCEL_RANGE_4G)) {
 		Serial.println("There was a problem detecting the FXOS8700 ... check your connections");
 		while (1);
 	}
 
-	vector angular_velocity_initial;
-	angular_velocity_initial.x = 0;
-	angular_velocity_initial.y = 0;
-	angular_velocity_initial.z = 0;
+	this->angular_velocity_initial.x = 0;
+	this->angular_velocity_initial.y = 0;
+	this->angular_velocity_initial.z = 0;
+
+	this->angular_velocity_final.x = 0;
+	this->angular_velocity_final.y = 0;
+	this->angular_velocity_final.z = 0;
+
+	this->gyro_buffer_x[0] = 0;
+	this->gyro_buffer_y[0] = 0;
+	this->gyro_buffer_z[0] = 0;
+
+	this->gyro_buffer_x[1] = 0;
+	this->gyro_buffer_y[1] = 0;
+	this->gyro_buffer_z[1] = 0;
 }
 
 vector Orientation::measure_gyro() {
@@ -52,26 +60,50 @@ vector Orientation::measure_gyro() {
 	this->delta_t = (t_final - t_initial);
 
 	//create gyro vector:
-	vector gyro_vector;
-	gyro_vector.x = x;
-	gyro_vector.y = y;
-	gyro_vector.z = z;
+	this->gyro_vector.x = x;
+	this->gyro_vector.y = y;
+	this->gyro_vector.z = z;
 
 	return gyro_vector;
 }
 
+vector Orientation::smooth_gyro(vector gyro_vector) {
+
+	this->gyro_buffer_x[2] = gyro_vector.x;
+	this->gyro_buffer_y[2] = gyro_vector.y;
+	this->gyro_buffer_z[2] = gyro_vector.z;
+
+	float averaged_gyro_x = Orientation::moving_average_3n(gyro_buffer_x);
+	float averaged_gyro_y = Orientation::moving_average_3n(gyro_buffer_y);
+	float averaged_gyro_z = Orientation::moving_average_3n(gyro_buffer_z);
+
+	this->gyro_buffer_x[0] = this->gyro_buffer_x[1];
+	this->gyro_buffer_y[0] = this->gyro_buffer_y[1];
+	this->gyro_buffer_z[0] = this->gyro_buffer_z[1];
+
+	this->gyro_buffer_x[1] = this->gyro_buffer_x[2];
+	this->gyro_buffer_y[1] = this->gyro_buffer_y[2];
+	this->gyro_buffer_z[1] = this->gyro_buffer_z[2];
+
+}
+
 vector Orientation::angular_acceleration() {
+
 	//Derivative Approximation of angular acceleration from angular velocity measure by the gyroscope
-	
+	this->angular_velocity_final.x = this->gyro_vector.x;
+	this->angular_velocity_final.y = this->gyro_vector.y;
+	this->angular_velocity_final.z = this->gyro_vector.z;
+
+
 	vector angular_acceleration;
-	angular_acceleration.x = (gyro_vector.x - angular_velocity_initial.x) / this->delta_t;
-	angular_acceleration.y = (gyro_vector.y - angular_velocity_initial.y) / this->delta_t;
-	angular_acceleration.z = (gyro_vector.z - angular_velocity_initial.z) / this->delta_t;
+	angular_acceleration.x = (this->angular_velocity_final.x - angular_velocity_initial.x) / this->delta_t;
+	angular_acceleration.y = (this->angular_velocity_final.y - angular_velocity_initial.y) / this->delta_t;
+	angular_acceleration.z = (this->angular_velocity_final.z - angular_velocity_initial.z) / this->delta_t;
 
 	//Reset initial coniditions
-	angular_velocity_initial.x = angular_velocity_final.x;
-	angular_velocity_initial.y = angular_velocity_final.x;
-	angular_velocity_initial.z = angular_velocity_final.x;
+	this->angular_velocity_initial.x = this->angular_velocity_final.x;
+	this->angular_velocity_initial.y = this->angular_velocity_final.y;
+	this->angular_velocity_initial.z = this->angular_velocity_final.z;
 
 	return angular_acceleration;
 }
@@ -126,12 +158,17 @@ float Orientation::calculate_Moment_of_Inertia() {
 	//calculate the moment of inertia of the rod:
 
 	//measured in units of meters
-	float radius = 0.008;//8mm
-	float length = 0.32;//32cm
-	float volume = (pi * radius^2) * length;
-	float density = 0.6;
+	float radius = 0.008f;//8mm
+	float length = 0.32f;//32cm
+	float volume = (PI * radius * radius) * length;
+	float density = 0.6e3;//kg/m^3
 	float mass = density / volume;
-	float Moment_of_Inertia = (1/4)*(mass*radius^2) + (1/12)*(mass*length^2);
+
+	Serial.println(mass);
+
+	float Moment_of_Inertia = (0.25)*(mass*pow(radius,2.0)) + (0.08333)*(mass*pow(length,2.0));//kg*m^2
+
+	Serial.println(Moment_of_Inertia);
 
 	return Moment_of_Inertia;
 }
@@ -160,6 +197,21 @@ float Orientation::get_delta_t() {
 	return this->delta_t;
 }
 
+float Orientation::moving_average_3n(float data_in[3]) {
+	//Calculates the moving average with a sample window of 3 data points
+
+	int n = 3;
+	float buffer[n];
+	buffer[0] = data_in[0];
+	buffer[1] = data_in[1];
+	buffer[2] = data_in[2];
+
+	float MA = (buffer[0] + buffer[1] + buffer[2]) / n;
+
+	return MA;
+
+}
+
 float vector::magnitude() {
 	//calculate the magnitude of this vector:
 	float magnitude = sqrt(sq(this->x) + sq(this->y) + sq(this->z));
@@ -180,7 +232,7 @@ float vector::angle_between_vectors(vector v) {
 }
 
 vector vector::cross_product(vector v) {
-	//calculate the cross producto of this vector with given vector v:
+	//calculate the cross product of this vector with given vector v:
 	vector n;
 	n.x = ((this->y * v.z) - (this->z * v.y));
 	n.y = -1 * ((this->x * v.z) - (this->z * v.x));
@@ -204,8 +256,10 @@ void vector::convert_to_radians() {
 }
 
 void vector::set_vector(float vector_array[]) {
+	//Takes a one-dimensional array and converts it to a vector
 
 	this->x = vector_array[0];
 	this->y = vector_array[1];
 	this->z = vector_array[2];
 }
+

@@ -40,10 +40,10 @@ float PID::convert_sensor_to_degrees(int raw) {
 	return cp;
 }
 
-float PID::calculate_error(int set_point) {
+float PID::calculate_error(float current_point, int set_point) {
 	this->set_point = set_point;
 
-	this->error = abs(this->cp - this->set_point);
+	this->error = abs(current_point - this->set_point);
 
 	return this->error;
 }
@@ -92,14 +92,14 @@ float PID::d_loop() {
 	return error_derivative;
 }
 
-float PID::calculate_pid( int set_point) {
+float PID::calculate_pid(float current_point, int set_point) {
 
-	this->error = PID::calculate_error(set_point);
+	this->error = PID::calculate_error(current_point, set_point);
 
 	this->p		= PID::p_loop();
 	this->i		= PID::i_loop();
 	this->d		= PID::d_loop();
-	this->pid	= this->p + this->i + this->d;
+	this->pid	= this->p + this->i;
 
 	return this->pid;
 }

@@ -20,17 +20,18 @@ public:
 	PID(int sensor_pin);
 	void set_k_values(float kp, float ki, float kd);
 	float measure_sensor();
-	float calculate_error(int set_point);
+	float calculate_error(float current_point, int set_point);
 	float p_loop();
 	float i_loop();
 	float d_loop();
-	float calculate_pid(int set_point);
+	float calculate_pid(float current_point, int set_point);
 	float get_delta_t();
 	int get_error();
 	
 	float kp;
 	float ki;
 	float kd;
+
 	int sensor_pin;
 	int set_point;
 
