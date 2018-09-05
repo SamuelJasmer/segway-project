@@ -17,9 +17,8 @@
 class PID {
 
 public:
-	PID(int sensor_pin);
+	PID();
 	void set_k_values(float kp, float ki, float kd);
-	float measure_sensor();
 	float calculate_error(float current_point, int set_point);
 	float p_loop();
 	float i_loop();
@@ -32,7 +31,6 @@ public:
 	float ki;
 	float kd;
 
-	int sensor_pin;
 	int set_point;
 
 	float p = 0;
@@ -43,7 +41,7 @@ public:
 	float output_initial = 0;
 	float output_final = 0;
 
-	float cp = 0;
+	float current_point = 0;
 
 	int error = 0;
 	
@@ -54,5 +52,4 @@ private:
 	
 	int error_final = 0;
 	float error_integral = 0;
-	float convert_sensor_to_degrees(int raw);
 };

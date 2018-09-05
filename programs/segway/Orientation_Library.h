@@ -43,7 +43,7 @@ class Orientation {
 		vector integrate_vector(vector u);
 		vector smooth_gyro(vector gyro_vector);
 
-		void initialize();
+		void init();
 		float calculate_Moment_of_Inertia();
 		float integrate(float u);
 		float get_delta_t();
@@ -55,7 +55,30 @@ class Orientation {
 
 	private:
 		float delta_t = 0;	
+
 		float gyro_buffer_x[3];
 		float gyro_buffer_y[3];
 		float gyro_buffer_z[3];
+};
+
+class filter {
+
+	public:
+		vector moving_average(vector data_in[], int n);
+		vector sample_mean(vector input, int n);
+		vector sample_variance(vector sample_mean, vector current_point, int n);
+		vector covariance(vector sample_mean, vector current_point, int n);
+		vector standard_deviation(vector sample_variance);
+
+		vector CLT(vector variance1, vector variance2, vector sensor1, vector sensor2);
+		vector least_squares_regression(vector input, int n);
+		vector weighted_least_squares_regression(vector input, int n);
+		vector lowess_smooth();
+
+
+	private: 
+		vector buffer[];
+		vector variance_buffer[];
+		vector covariance_buffer[];
+		vector average;
 };

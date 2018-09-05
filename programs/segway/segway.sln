@@ -5,9 +5,9 @@ VisualStudioVersion = 15.0.26730.16
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "segway", "segway.vcxproj", "{C5F80730-F44F-4478-BDAE-6634EFC2CA88}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Adafruit_FXAS21002C", "..\..\..\..\..\Documents\Arduino\libraries\Adafruit_FXAS21002C\Adafruit_FXAS21002C.vcxitems", "{484BD333-374D-4F19-8E71-76A66ADB9CA9}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HID", "..\..\..\..\..\AppData\Local\arduino15\packages\arduino\hardware\samd\1.6.18\libraries\HID\HID.vcxitems", "{D11F78C0-BCA4-444C-A3A7-F7148DF9A196}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "position_analysis", "..\position_analysis\position_analysis.vcxproj", "{6A5725B0-2213-4B16-AE3C-E664CA455FCF}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ArduinoCrashMonitor-master", "..\..\..\..\..\Documents\Arduino\libraries\ArduinoCrashMonitor-master\ArduinoCrashMonitor-master.vcxitems", "{E272616A-D32C-4A72-AC4D-6F8FE01C94CA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,15 +19,11 @@ Global
 		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Debug|x86.Build.0 = Debug|Win32
 		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|x86.ActiveCfg = Release|Win32
 		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|x86.Build.0 = Release|Win32
-		{6A5725B0-2213-4B16-AE3C-E664CA455FCF}.Debug|x86.ActiveCfg = Debug|Win32
-		{6A5725B0-2213-4B16-AE3C-E664CA455FCF}.Debug|x86.Build.0 = Debug|Win32
-		{6A5725B0-2213-4B16-AE3C-E664CA455FCF}.Release|x86.ActiveCfg = Release|Win32
-		{6A5725B0-2213-4B16-AE3C-E664CA455FCF}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {DC0322BE-FB44-4EAF-A509-EBD88EA967B5}
+		SolutionGuid = {4E1C3902-D984-4686-820C-03200C196EA5}
 	EndGlobalSection
 EndGlobal

@@ -16,9 +16,13 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="segway.ino" />
+    <None Include="test.ino" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="__vm\.segway.vsarduino.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="L298N.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="matrix.h">
@@ -30,11 +34,11 @@
     <ClInclude Include="PID.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="L298N.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="L298N.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="matrix.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -42,9 +46,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PID.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="L298N.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

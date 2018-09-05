@@ -4,21 +4,27 @@
     Author:     AD\jasmersr
 */
 
-#include <Servo.h>
+//#include "C:/Users/jasmersr/Desktop/Project/robot_project/programs/ArduinoCrashMonitor-master/CrashTracking/ApplicationMonitor.h"
+//#include "C:/Users/jasmersr/Desktop/Project/robot_project/programs/ArduinoCrashMonitor-master/CrashTracking/ApplicationMonitor.cpp"
 #include "PID.h"
+#include "L298N.h"
+#include "Orientation_Library.h"
+#include "matrix.h"
 #include "Adafruit_Sensor.h"
 #include "Adafruit_FXOS8700.h"
 #include "Adafruit_FXAS21002C.h"
 #include "Wire.h"
-#include "Orientation_Library.h"
-#include "matrix.h"
 #include "ArduinoSTL.h"
 #include <cstring>
 #include <iostream>
 #include "stdlib.h"
 #include <string>
 #include <vector>
-#include "L298N.h"
+
+//Crash Report Library
+//Watchdog::CApplicationMonitor ApplicationMonitor;
+int g_nIterations = 0;
+int g_nEndOfTheWorld = 15;
 
 #define ENA		 10
 #define IN_A1	 9
@@ -34,8 +40,12 @@
 L298N MotorA(ENA, IN_A1, IN_A2);
 L298N MotorB(ENB, IN_B1, IN_B2);
 
-//Instantiate Orientation Library:
+//Instantiate Orientation:
 Orientation segway_orientation;
+
+//Instantiate filter:
+filter accelerometer_filter;
+filter magnetometer_filter;
 
 //Unit Vectors:
 vector i_vector;
@@ -43,9 +53,9 @@ vector j_vector;
 vector k_vector;
 
 //Acceleration Vectors:
-vector accel_raw;
-vector acceleration;//unnecessary, mearly converts name of accel_raw to acceleration
+vector acceleration;
 vector accel_angles;
+vector accel_smoothed;
 
 //Angular Velocity Vectors:
 vector angular_velocity;
@@ -53,11 +63,23 @@ vector angular_displacement;
 vector zero_point;
 
 //Magnetic Vectors:
-vector mag_raw;
-vector magnetic;//unnecessary, mearly converts name of mag_raw to magnetic
+vector magnetism;
 vector mag_angles;
 
-vector averaged_angles;
+//Sensor Smoothing Vectors:
+const int n = 5; //size of buffers
+
+vector accel_buffer[n];
+vector accel_averaged_angles;
+vector accel_angles_variance_buffer[n];
+vector accel_angles_variance;
+
+vector mag_buffer[n];
+vector mag_averaged_angles;
+vector mag_angles_variance_buffer[n];
+vector mag_angles_variance;
+
+vector angles;
 
 //Magnetic Calibration Matricies:
 Matrix magnetic_transformation_matrix;
@@ -66,9 +88,9 @@ Matrix magnetometer_raw;
 Matrix magnetometer_calibrated;
 
 //Instantiate PID Object:
-PID pid(ANALOG_0);
+PID pid;
 
-float kp = 0.0;
+float kp = 2.5;
 float ki = 0.0;
 float kd = 0.0;
 
@@ -83,91 +105,117 @@ void parseCSV(std::string input, std::vector<std::string>* argv);
 void setup() {
 
 	Serial.begin(19200);	
-	while (!Serial);
+	while(!Serial);
 	serialInputBuf = new std::vector<char>();
 
+	//ApplicationMonitor.Dump(Serial);
+	//ApplicationMonitor.EnableWatchdog(Watchdog::CApplicationMonitor::Timeout_1s);
+
 	//Setup Segway:
-	segway_orientation.initialize();
+	segway_orientation.init();
 
 	float i[]{ 1,0,0 };
 	float j[]{ 0,1,0 };
 	float k[]{ 0,0,1 };
 
-	magnetic_transformation_matrix = Matrix(3, 3);
-	magnetic_offset_matrix = Matrix(3, 1);
-	magnetometer_raw = Matrix(3, 1);
-	magnetometer_calibrated = Matrix(3, 1);
-
-	magnetic_offset_matrix.set(0, 0, 0.0f);
-	magnetic_offset_matrix.set(1, 0, 0.0f);
-	magnetic_offset_matrix.set(2, 0, 0.0f);
-
-	magnetic_transformation_matrix.set(0, new float[3]{ 1.014f, -0.020f, 0.012f });
-	magnetic_transformation_matrix.set(1, new float[3]{ -0.020f, 0.985f, 0.005f });
-	magnetic_transformation_matrix.set(2, new float[3]{ 0.012f, 0.005f, 1.002f });
-
 	i_vector.set_vector(i);
 	j_vector.set_vector(j);
 	k_vector.set_vector(k);
 
+	//Calibrate Magnetometer
+	setup_magnetometer();
+
 	//Run Gyroscope Calibration:
 	//Serial.println(F("Calibrating Gyro"));
-	calibrate_gyro();
-
-	//Motor Test:
-
-
+	//calibrate_gyro();
+	
 }
 
 void loop() {
 
-	checkSerial();
+	//Moniter();
+	//checkSerial();
 
-	angular_velocity = segway_orientation.measure_gyro();
+	//angular_velocity = segway_orientation.measure_gyro();
 
-	//Serial.print(angular_velocity.x);
-	//Serial.print(" , ");
-	//Serial.print(angular_velocity.y);
-	//Serial.print(" , ");
-	//Serial.print(angular_velocity.z);
+	acceleration = calculate_acceleration();
+	accel_angles = get_accel_angles(acceleration);
+	//accel_averaged_angles = accelerometer_filter.sample_mean(accel_angles, n);
+	accel_smoothed = accelerometer_filter.least_squares_regression(accel_angles, n);
+	//accel_smoothed = accelerometer_filter.least_squares_regression(accel_smoothed, n);
 
-	//Serial.print("    ");
+	Serial.println(accel_smoothed.y);
+	//Serial.print(",");
+	//Serial.print(accel_smoothed.y);
+	//Serial.print(",");
+	//Serial.print(accel_smoothed.z);
 
-	calculate_magnetism();
-	calculate_acceleration();
-	averaged_angles = calculate_average_angles();
+	//accel_angles_variance = accelerometer_filter.sample_variance(accel_averaged_angles, accel_angles, accel_angles_variance_buffer, n);
 
-	//print_mag_angles();
-	//Serial.print("  ");
-	//print_accel_angles();
-	//Serial.print("  ");
-	//print_averaged_angles();
+	//magnetism = calculate_magnetism();
+	//mag_angles = get_mag_angles(magnetism);
+	//mag_averaged_angles = magnetometer_filter.sample_mean(mag_angles, n);
+	//mag_angles_variance = magnetometer_filter.sample_variance(mag_averaged_angles, mag_angles, mag_angles_variance_buffer, n);
 
+	//angles = accelerometer_filter.CLT(accel_angles_variance, mag_angles_variance, accel_angles, mag_angles);
+	//angles.x = (accel_averaged_angles.x + mag_averaged_angles.x) / 2;
+	//angles.y = (accel_averaged_angles.y + mag_averaged_angles.y) / 2;
+	//angles.x = (accel_averaged_angles.z + mag_averaged_angles.z) / 2;
+
+	//Serial.print(angles.y);
+//
+	//Serial.print(",");
+//
+	//Serial.print(accel_angles.y);
+	//Serial.print(",");
+	//Serial.print(accel_averaged_angles.y);
+	//Serial.print(",");
+	//Serial.print(accel_angles_variance.y);
+	//Serial.print(",");
+//
+	//Serial.print(mag_angles.y);
+	//Serial.print(",");
+	//Serial.print(mag_averaged_angles.y);
+	//Serial.print(",");
+	//Serial.print(mag_angles_variance.y);
+//
+	//Serial.println();
+	
+
+	/*
 	pid.set_k_values(kp, ki, kd);
-	pid_speed = abs(pid.calculate_pid(averaged_angles.y, set_point));
+	pid_speed = abs(pid.calculate_pid(angles.y, set_point));
+
+	Serial.println(pid_speed);
 
 	if (pid_speed == 0) {
-
+		//do nothing, i.e.:stop moving
+		MotorA.stop();
 	}
 	else if (pid_speed > 255) {
+		//limit upper bound of pid speed
 		pid_speed = 255;
 	}
 	else if (pid_speed < 80) {
+		//limit lower bound of pid speed
 		pid_speed = 0;
 	}
-	if (averaged_angles.y > set_point) {
+	if (angles.y > set_point) {
 		MotorA.forward();
 		MotorA.set_speed(pid_speed);
 	}
-	else if (averaged_angles.y < set_point) {
+	else if (angles.y < set_point) {
 		MotorA.reverse();
 		MotorA.set_speed(pid_speed);
 	}
 	else {
+		//do nothing, i.e.:stop moving
 		MotorA.stop();
 	}
+	*/
+	
 
-	print_pid_data();
+	//print_pid_data();
 
 
 
@@ -239,6 +287,27 @@ void loop() {
  *
  */
 
+
+/*
+void Moniter() {
+	//Crash Moniter:
+	//Uses internal arduino watchdog timer to moniter for crashes and return offending memory address.
+
+	ApplicationMonitor.IAmAlive();
+	ApplicationMonitor.SetData(g_nIterations++);
+
+	//Serial.println("The end is nigh!!!");
+
+	if (g_nEndOfTheWorld == 0)
+	{
+		Serial.println("The end is here. Goodbye cruel world.");
+		while (1)
+			; // do nothing until the watchdog timer kicks in and resets the program. 
+	}
+}
+
+*/
+
 void calibrate_gyro() {
 	int n = 1;
 	vector sum;
@@ -261,80 +330,74 @@ void calibrate_gyro() {
 	}
 }
 
-vector calculate_average_angles() {
-	vector averaged_angles;
-	averaged_angles.x = (accel_angles.x + mag_angles.x) / 2;
-	averaged_angles.y = (accel_angles.y + mag_angles.y) / 2;
-	averaged_angles.z = (accel_angles.z + mag_angles.z) / 2;
+void setup_magnetometer() {
+	magnetic_transformation_matrix = Matrix(3, 3);
+	magnetic_offset_matrix = Matrix(3, 1);
+	magnetometer_raw = Matrix(3, 1);
+	magnetometer_calibrated = Matrix(3, 1);
 
-	return averaged_angles;
+	magnetic_offset_matrix.set(0, 0, 0.0f);
+	magnetic_offset_matrix.set(1, 0, 0.0f);
+	magnetic_offset_matrix.set(2, 0, 0.0f);
+
+	magnetic_transformation_matrix.set(0, new float[3]{ 1.014f, -0.020f, 0.012f });
+	magnetic_transformation_matrix.set(1, new float[3]{ -0.020f, 0.985f, 0.005f });
+	magnetic_transformation_matrix.set(2, new float[3]{ 0.012f, 0.005f, 1.002f });
+
 }
 
-void calculate_acceleration() {
-	accel_raw = segway_orientation.measure_accelerometer();
-	get_acceleration(accel_raw);
-	get_accel_angles(acceleration);
-	accel_angles.convert_to_degrees();
+vector calculate_acceleration() {
+	vector acceleration;
+	acceleration = segway_orientation.measure_accelerometer();
+
+	return acceleration;
 }
 
-void get_accel_angles(vector acceleration) {
-	accel_angles.x = acceleration.angle_between_vectors(i_vector);
-	accel_angles.y = acceleration.angle_between_vectors(j_vector);
-	accel_angles.z = acceleration.angle_between_vectors(k_vector);
+vector get_accel_angles(vector acceleration) {
+	vector angles;
+	angles.x = acceleration.angle_between_vectors(i_vector);
+	angles.y = acceleration.angle_between_vectors(j_vector);
+	angles.z = acceleration.angle_between_vectors(k_vector);
+
+	angles.convert_to_degrees();
+
+	return angles;
 }
 
-void calculate_magnetism() {
-	mag_raw = segway_orientation.measure_magnetometer();
-	get_magnetic(mag_raw);
-	calibrate_magnetometer(magnetic);
-	vector magnetometer_calibrated_vector;
-	magnetometer_calibrated_vector.x = magnetometer_calibrated[0][0];
-	magnetometer_calibrated_vector.y = magnetometer_calibrated[1][0];
-	magnetometer_calibrated_vector.z = magnetometer_calibrated[2][0];
+vector calculate_magnetism() {
+	vector magnetism;
+	magnetism = segway_orientation.measure_magnetometer();
+	calibrate_magnetometer(magnetism);
+	magnetism.x = magnetometer_calibrated[0][0];
+	magnetism.y = magnetometer_calibrated[1][0];
+	magnetism.z = magnetometer_calibrated[2][0];
 
-	get_mag_angles(magnetometer_calibrated_vector);
-	mag_angles.convert_to_degrees();
+	return magnetism;
+}
+
+void calibrate_magnetometer(vector magnetism) {
+	magnetometer_raw.set(0, 0, magnetism.x);
+	magnetometer_raw.set(1, 0, magnetism.y);
+	magnetometer_raw.set(2, 0, magnetism.z);
+
+	magnetometer_calibrated = magnetic_transformation_matrix * (magnetometer_raw - magnetic_offset_matrix);
+}
+
+vector get_mag_angles(vector magnetism) {
+	vector angles;
+	angles.x = magnetism.angle_between_vectors(i_vector);
+	angles.y = magnetism.angle_between_vectors(j_vector);
+	angles.z = magnetism.angle_between_vectors(k_vector);
+
+	angles.convert_to_degrees();
+
+	return angles;
 }
 
 void calculate_angular_motion() {
 	vector angular_velocity = segway_orientation.measure_gyro();
 	vector angular_displacement = segway_orientation.integrate_vector(angular_velocity);
 	angular_displacement.convert_to_degrees();
-}
-
-void calibrate_magnetometer(vector magnetic) {
-	magnetometer_raw.set(0, 0, magnetic.x);
-	magnetometer_raw.set(1, 0, magnetic.y);
-	magnetometer_raw.set(2, 0, magnetic.z);
-
-	magnetometer_calibrated = magnetic_transformation_matrix * (magnetometer_raw - magnetic_offset_matrix);
-}
-
-void get_mag_angles(vector magnetometer_cal_vector) {
-	mag_angles.x = magnetometer_cal_vector.angle_between_vectors(i_vector);
-	mag_angles.y = magnetometer_cal_vector.angle_between_vectors(j_vector);
-	mag_angles.z = magnetometer_cal_vector.angle_between_vectors(k_vector);
-}
-
-void get_magnetic(vector mag) {
-	magnetic.x = mag.x;
-	magnetic.y = mag.y;
-	magnetic.z = mag.z;
-}
-
-void get_acceleration(vector accel) {
-	acceleration.x = accel.x;
-	acceleration.y = accel.y;
-	acceleration.z = accel.z;
-}
-
-void print_averaged_angles() {
-	Serial.print(averaged_angles.x);
-	Serial.print(" , ");
-	Serial.print(averaged_angles.y);
-	Serial.print(" , ");
-	Serial.print(averaged_angles.z);
-
 }
 
 vector new_angle_approx(vector angular_acceleration, vector angular_velocity_final, vector angular_velocity_initial) {
@@ -410,8 +473,9 @@ void print_angular_velocity() {
 	Serial.print(angular_velocity.z);
 }
 
+/*
 void print_pid_data() {
-	Serial.print(averaged_angles.y);
+	Serial.print(angles.y);
 	Serial.print(",");
 	Serial.print(pid.p);
 	Serial.print(",");
@@ -429,6 +493,7 @@ void print_pid_data() {
 	Serial.print(",");
 	Serial.println(kd);
 }
+*/
 
 void checkSerial()
 {
@@ -445,15 +510,19 @@ void checkSerial()
 			std::vector<std::string> inputSep;
 			std::string input(serialInputBuf->begin(), serialInputBuf->end());
 			serialInputBuf->clear();
-
+			
+			
 			parseCSV(input, &inputSep);
 
+			/*
 			if (inputSep.size() >= 3)
 			{
 				kp = atof(inputSep[0].c_str());
 				ki = atof(inputSep[1].c_str());
 				kd = atof(inputSep[2].c_str());
 			}
+			*/
+			
 		}
 	}
 }
@@ -475,3 +544,5 @@ void parseCSV(std::string input, std::vector<std::string>* argv)
 	}
 	argv->push_back(current);
 }
+
+
