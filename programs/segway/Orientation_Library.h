@@ -10,9 +10,11 @@
 #else
 	#include "WProgram.h"
 #endif
+	#include "matrix.h"
+	#include "ArduinoSTL.h"
+	#include <deque>
 
 
-#endif
 
 struct vector {
 
@@ -64,7 +66,7 @@ class Orientation {
 class filter {
 
 	public:
-		vector moving_average(vector data_in[], int n);
+		void init(int n);
 		vector sample_mean(vector input, int n);
 		vector sample_variance(vector sample_mean, vector current_point, int n);
 		vector covariance(vector sample_mean, vector current_point, int n);
@@ -72,13 +74,26 @@ class filter {
 
 		vector CLT(vector variance1, vector variance2, vector sensor1, vector sensor2);
 		vector least_squares_regression(vector input, int n);
-		vector weighted_least_squares_regression(vector input, int n);
-		vector lowess_smooth();
+		Matrix create_weight_Matrix(float current_variance, int n);
+		Matrix create_error_Matrix(float current_variance, int n);
+		Matrix weighted_least_squares_regression(float input, float variance, int n);
+		vector lowess_smooth(vector input, int n);
 
 
 	private: 
+		float Y_buffer[];
 		vector buffer[];
-		vector variance_buffer[];
+		vector mean_buffer[];
+		float variance_buffer[];
 		vector covariance_buffer[];
 		vector average;
+		std::deque<float> buffer_x;
+		std::deque<float> buffer_y;
+		std::deque<float> buffer_z;
+
+		std::deque<float> mean_buffer_x;
+		std::deque<float> mean_buffer_y;
+		std::deque<float> mean_buffer_z;
 };
+
+#endif

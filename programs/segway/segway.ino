@@ -16,15 +16,13 @@
 #include "Wire.h"
 #include "ArduinoSTL.h"
 #include <cstring>
-#include <iostream>
 #include "stdlib.h"
 #include <string>
-#include <vector>
 
 //Crash Report Library
 //Watchdog::CApplicationMonitor ApplicationMonitor;
-int g_nIterations = 0;
-int g_nEndOfTheWorld = 15;
+//int g_nIterations = 0;
+//int g_nEndOfTheWorld = 15;
 
 #define ENA		 10
 #define IN_A1	 9
@@ -56,6 +54,7 @@ vector k_vector;
 vector acceleration;
 vector accel_angles;
 vector accel_smoothed;
+vector sample_mean;
 
 //Angular Velocity Vectors:
 vector angular_velocity;
@@ -113,6 +112,7 @@ void setup() {
 
 	//Setup Segway:
 	segway_orientation.init();
+	//accelerometer_filter.init(n);
 
 	float i[]{ 1,0,0 };
 	float j[]{ 0,1,0 };
@@ -133,22 +133,26 @@ void setup() {
 
 void loop() {
 
+	Serial.println("test");
+
 	//Moniter();
 	//checkSerial();
 
 	//angular_velocity = segway_orientation.measure_gyro();
 
-	acceleration = calculate_acceleration();
-	accel_angles = get_accel_angles(acceleration);
+	///acceleration = calculate_acceleration();
+	///accel_angles = get_accel_angles(acceleration);
 	//accel_averaged_angles = accelerometer_filter.sample_mean(accel_angles, n);
-	accel_smoothed = accelerometer_filter.least_squares_regression(accel_angles, n);
+	//accel_smoothed = accelerometer_filter.least_squares_regression(accel_angles, n);
 	//accel_smoothed = accelerometer_filter.least_squares_regression(accel_smoothed, n);
 
-	Serial.println(accel_smoothed.y);
+	///accel_angles = accelerometer_filter.lowess_smooth(accel_angles, n);
+	///sample_mean = accelerometer_filter.sample_mean(accel_angles, n);
+	//Serial.print(sample_mean.x);
 	//Serial.print(",");
-	//Serial.print(accel_smoothed.y);
+	//Serial.print(sample_mean.y);
 	//Serial.print(",");
-	//Serial.print(accel_smoothed.z);
+	//Serial.println(sample_mean.z);
 
 	//accel_angles_variance = accelerometer_filter.sample_variance(accel_averaged_angles, accel_angles, accel_angles_variance_buffer, n);
 

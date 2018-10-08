@@ -8,6 +8,9 @@
 #include <Adafruit_FXAS21002C.h>
 #include <Wire.h>
 #include "matrix.h"
+#include "ArduinoSTL.h"
+#include <iostream>
+#include <deque> 
 
 Adafruit_FXAS21002C gyro = Adafruit_FXAS21002C(0x0021002C);
 Adafruit_FXOS8700 accelmag = Adafruit_FXOS8700(0x8700A, 0x8700B);
@@ -206,7 +209,7 @@ float Orientation::get_delta_t() {
 float Orientation::moving_average_3n(float data_in[3]) {
 	//Calculates the moving average with a sample window of 3 data points
 
-	int n = 3;
+	const int n = 3;
 	float buffer[n];
 	buffer[0] = data_in[0];
 	buffer[1] = data_in[1];
@@ -215,7 +218,6 @@ float Orientation::moving_average_3n(float data_in[3]) {
 	float MA = (buffer[0] + buffer[1] + buffer[2]) / n;
 
 	return MA;
-
 }
 
 /*
@@ -278,60 +280,61 @@ void vector::set_vector(float vector_array[]) {
  * Filter Methods
  */
 
+void filter::init(int n) {
+
+	this->buffer_x.clear();
+	this->buffer_y.clear();
+	this->buffer_z.clear();
+
+	this->mean_buffer_x.clear();
+	this->mean_buffer_y.clear();
+	this->mean_buffer_z.clear();
+}
 
 vector filter::sample_mean(vector input, int n) {
 	//Calcule the sample mean of n number of data points
 
-	buffer[n - 1].x = input.x;
-	buffer[n - 1].y = input.y;
-	buffer[n - 1].z = input.z;
 
-	this->average = filter::moving_average(buffer, n);
+	this->buffer_x.push_back(input.x);
+	this->buffer_x.pop_front();
+	
+	this->buffer_y.push_back(input.y);
+	this->buffer_y.pop_front();
 
-	//shift buffer
-	for (int i = 0; i < n; i++) {
-		buffer[i].x = buffer[i + 1].x;
-		buffer[i].y = buffer[i + 1].y;
-		buffer[i].z = buffer[i + 1].z;
-	}
-
-	return average;
-}
-
-vector filter::moving_average(vector data_in[], int n) {
-	//Calculates the moving average with a sample window of 3 data points
+	this->buffer_z.push_back(input.z);
+	this->buffer_z.pop_front();
 
 	vector sum;
 
 	for (int i = 0; i < n; i++) {
-		sum.x += data_in[i].x;
-		sum.y += data_in[i].y;
-		sum.z += data_in[i].z;
+		sum.x += buffer_x.at(i);
+		sum.y += buffer_y.at(i);
+		sum.z += buffer_z.at(i);
 	}
 
-	vector MA;
-	MA.x = sum.x / n;
-	MA.y = sum.y / n;
-	MA.z = sum.z / n;
+	vector average;
+	average.x = sum.x / n;
+	average.y = sum.y / n;
+	average.z = sum.z / n;
 
-	return MA;
+	return average;
 }
 
 vector filter::sample_variance(vector sample_mean, vector current_point, int n) {
 
 	//variance_buffer[n];
 
-	variance_buffer[n - 1].x = current_point.x;
-	variance_buffer[n - 1].y = current_point.y;
-	variance_buffer[n - 1].z = current_point.z;
+	mean_buffer[n - 1].x = current_point.x;
+	mean_buffer[n - 1].y = current_point.y;
+	mean_buffer[n - 1].z = current_point.z;
 	
 	vector sum;
 
 	//sum incoming data
 	for (int i = 0; i < n; i++) {
-		sum.x += pow((variance_buffer[i].x - sample_mean.x) , 2);
-		sum.y += pow((variance_buffer[i].y - sample_mean.y) , 2);
-		sum.z += pow((variance_buffer[i].z - sample_mean.z) , 2);
+		sum.x += pow((mean_buffer[i].x - sample_mean.x) , 2);
+		sum.y += pow((mean_buffer[i].y - sample_mean.y) , 2);
+		sum.z += pow((mean_buffer[i].z - sample_mean.z) , 2);
 	}
 
 	vector sample_variance;
@@ -340,10 +343,10 @@ vector filter::sample_variance(vector sample_mean, vector current_point, int n) 
 	sample_variance.z = sum.z / (n - 1);
 
 	//shift buffer
-	for (int j = 0; j < n; j++) {
-		variance_buffer[j].x = variance_buffer[j + 1].x;
-		variance_buffer[j].y = variance_buffer[j + 1].y;
-		variance_buffer[j].z = variance_buffer[j + 1].z;
+	for (int j = 0; j < n-1; j++) {
+		mean_buffer[j].x = mean_buffer[j + 1].x;
+		mean_buffer[j].y = mean_buffer[j + 1].y;
+		mean_buffer[j].z = mean_buffer[j + 1].z;
 	}
 
 	return sample_variance;
@@ -368,7 +371,7 @@ vector filter::covariance(vector sample_mean, vector current_point, int n) {
 		sum.z += ((covariance_buffer[j].z - sample_mean.z) * (j - ave_n));
 	}
 
-	for (int k = 0; k < n; k++) {
+	for (int k = 0; k < n-1; k++) {
 		covariance_buffer[k].x = covariance_buffer[k + 1].x;
 		covariance_buffer[k].y = covariance_buffer[k + 1].y;
 		covariance_buffer[k].z = covariance_buffer[k + 1].z;
@@ -448,16 +451,45 @@ vector filter::least_squares_regression(vector input, int n) {
 
 }
 
-vector filter::weighted_least_squares_regression(vector input, int n) {
+Matrix filter::create_error_Matrix(float current_variance, int n) {
 
-	int ave_n;
+	variance_buffer[n - 1] = current_variance;
+
+	Matrix Error_matrix;
+	Error_matrix = Matrix(n, 1);
+
+	/*
+	//Create Error Matrix
+	for (int row; row++; row < n) {
+		//row
+		for (int col; col++; col < n) {
+			//column
+			if (row == col) {
+				Error_matrix.set(row, col, variance_buffer[n]);
+			}
+			else {
+				Error_matrix.set(row, col, 0);
+			}
+		}
+	}
+	*/
+
+	//Create Error Matrix
 	for (int i = 0; i < n; i++) {
-		ave_n += i;
+		Error_matrix.set(i, 0, variance_buffer[i]);
 	}
 
-	vector mean = this->sample_mean(input, n);
-	vector cov = this->covariance(mean, input, n);
-	vector variance = this->sample_variance(mean, input, n);
+	for (int j = 0; j < n-1; j++) {
+
+		variance_buffer[j] = variance_buffer[j + 1];
+	}
+
+	return Error_matrix;
+}
+
+Matrix filter::create_weight_Matrix(float current_variance, int n) {
+
+	variance_buffer[n - 1] = current_variance;
 
 	Matrix Weight_matrix;
 	Weight_matrix = Matrix(n, n);
@@ -468,7 +500,7 @@ vector filter::weighted_least_squares_regression(vector input, int n) {
 		for (int col; col++; col < n) {
 			//column
 			if (row == col) {
-				Weight_matrix.set(row, col, variance);
+				Weight_matrix.set(row, col, 1 / variance_buffer[n]);
 			}
 			else {
 				Weight_matrix.set(row, col, 0);
@@ -476,11 +508,71 @@ vector filter::weighted_least_squares_regression(vector input, int n) {
 		}
 	}
 
-	
+	for (int i = 0; i < n; i++) {
 
+		variance_buffer[i] = variance_buffer[i + 1];
+	}
+
+	return Weight_matrix;
 }
 
-vector filter::lowess_smooth() {
+Matrix filter::weighted_least_squares_regression(float input, float variance, int n) {
 
+	int ave_n;
+	for (int i = 0; i < n; i++) {
+		ave_n += i;
+	}
 
+	Y_buffer[n - 1] = input;
+
+	Matrix X_Matrix;
+	X_Matrix = Matrix(n, 2);
+
+	Matrix Y_Matrix;
+	Y_Matrix = Matrix(n, 1);
+
+	Matrix B_Matrix;
+	B_Matrix = Matrix(2, 1);
+
+	Matrix Error_Matrix = create_error_Matrix(variance, n);
+	Matrix Weight_Matrix = create_weight_Matrix(variance, n);
+
+	for (int i = 0; i < n; i++) {
+		X_Matrix.set(i, 0, i);
+		X_Matrix.set(i, 1, i);
+		Y_Matrix.set(i, 0, Y_buffer[i]);
+	}
+
+	//Calculate slope
+
+	B_Matrix = (X_Matrix.transpose() * Weight_Matrix * X_Matrix).inverse() * (X_Matrix.transpose() * Weight_Matrix * Y_Matrix);
+
+	for (int j = 0; j < n-1; j++) {
+		Y_buffer[j] = Y_buffer[j + 1];
+	}
+
+	return B_Matrix;
+}
+
+vector filter::lowess_smooth(vector input, int n) {
+
+	vector mean = this->sample_mean(input, n);
+	vector cov = this->covariance(mean, input, n);
+	vector variance = this->sample_variance(mean, input, n);
+
+	Matrix B_Matrix_x;
+	B_Matrix_x = weighted_least_squares_regression(input.x, variance.x, n);
+
+	Matrix B_Matrix_y;
+	B_Matrix_y = weighted_least_squares_regression(input.y, variance.y, n);
+
+	Matrix B_Matrix_z;
+	B_Matrix_z = weighted_least_squares_regression(input.z, variance.z, n);
+
+	vector output;
+	output.x = B_Matrix_x.get(0, 0) * (n / 2) + B_Matrix_x.get(1, 0);
+	output.y = B_Matrix_y.get(0, 0) * (n / 2) + B_Matrix_y.get(1, 0);
+	output.z = B_Matrix_z.get(0, 0) * (n / 2) + B_Matrix_z.get(1, 0);
+
+	return output;
 }
