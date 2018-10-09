@@ -275,6 +275,13 @@ void vector::set_vector(float vector_array[]) {
 	this->z = vector_array[2];
 }
 
+void vector::clear() {
+	//Clear 
+	this->x = 0;
+	this->y = 0;
+	this->z = 0;
+}
+
 
 /*
  * Filter Methods
@@ -289,11 +296,14 @@ void filter::init(int n) {
 	this->mean_buffer_x.clear();
 	this->mean_buffer_y.clear();
 	this->mean_buffer_z.clear();
- 
+
+	this->buffer_x.resize(n,0.0);
+	this->buffer_y.resize(n,0.0);
+	this->buffer_z.resize(n,0.0);
 }
 
 vector filter::sample_mean(vector input, int n) {
-	//Hercule the sample mean of n number of data points
+	//Calculate the sample mean of n number of data points
 
 	this->buffer_x.push_back(input.x);
 	this->buffer_x.pop_front();
@@ -305,17 +315,23 @@ vector filter::sample_mean(vector input, int n) {
 	this->buffer_z.pop_front();
 
 	vector sum;
+	sum.clear();
 
-	for (int i = 0; i < n; i++) {
-		//sum.x += buffer_x.at(i);
-		//sum.y += buffer_y.at(i);
-		//sum.z += buffer_z.at(i);
+	if (buffer_x.size() < n || buffer_y.size() < n || buffer_z.size() < n) {
+		Serial.println("Sample mean buffer size is less than n");
+	}
+	else {
+		for (int i = 0; i < n; i++) {
+			sum.x += buffer_x.at(i);
+			sum.y += buffer_y.at(i);
+			sum.z += buffer_z.at(i);
+		}
 	}
 
 	vector average;
-	//average.x = sum.x / n;
-	//average.y = sum.y / n;
-	//average.z = sum.z / n;
+	average.x = sum.x / n;
+	average.y = sum.y / n;
+	average.z = sum.z / n;
 
 	return average;
 }
@@ -361,9 +377,10 @@ vector filter::covariance(vector sample_mean, vector current_point, int n) {
 	vector sum;
 	int ave_n;
 
-	for (int i = 0; i < n; i++) {
+	for (int i = 1; i <= n; i++) {
 		ave_n += i;
 	}
+	ave_n = ave_n / n;
 
 	for (int j = 0; j < n; j++) {
 		sum.x += ((covariance_buffer[j].x - sample_mean.x) * (j - ave_n));
@@ -423,9 +440,11 @@ vector filter::CLT(vector variance1, vector variance2, vector sensor1, vector se
 vector filter::least_squares_regression(vector input, int n) {
 
 	int ave_n;
-	for (int i = 0; i < n; i++) {
+	for (int i = 1; i <= n; i++) {
 		ave_n += i;
 	}
+
+	ave_n = ave_n / n;
 
 	vector mean = this->sample_mean(input, n);
 	vector cov = this->covariance(mean, input, n);
@@ -519,9 +538,10 @@ Matrix filter::create_weight_Matrix(float current_variance, int n) {
 Matrix filter::weighted_least_squares_regression(float input, float variance, int n) {
 
 	int ave_n;
-	for (int i = 0; i < n; i++) {
+	for (int i = 1; i <= n; i++) {
 		ave_n += i;
 	}
+	ave_n = ave_n / n;
 
 	Y_buffer[n - 1] = input;
 

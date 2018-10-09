@@ -131,14 +131,20 @@ void loop() {
 	//angular_velocity = segway_orientation.measure_gyro();
 
 	acceleration = calculate_acceleration();
-	//accel_angles = get_accel_angles(acceleration);
+	accel_angles = get_accel_angles(acceleration);
 	//Serial.println(accel_angles.x);
 	//accel_averaged_angles = accelerometer_filter.sample_mean(accel_angles, n);
 	//accel_smoothed = accelerometer_filter.least_squares_regression(accel_angles, n);
 	//accel_smoothed = accelerometer_filter.least_squares_regression(accel_smoothed, n);
 
-	///accel_angles = accelerometer_filter.lowess_smooth(accel_angles, n);
-	sample_mean = accelerometer_filter.sample_mean(acceleration, n);
+	//accel_angles = accelerometer_filter.lowess_smooth(accel_angles, n);
+	sample_mean = accelerometer_filter.sample_mean(accel_angles, n);
+
+	Serial.print(sample_mean.x);
+	Serial.print(",");
+	Serial.print(sample_mean.y);
+	Serial.print(",");
+	Serial.println(sample_mean.z);
 
 	//accel_angles_variance = accelerometer_filter.sample_variance(accel_averaged_angles, accel_angles, accel_angles_variance_buffer, n);
 

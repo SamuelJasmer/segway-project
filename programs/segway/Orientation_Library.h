@@ -25,6 +25,7 @@ struct vector {
 		float magnitude();
 
 		void set_vector(float vector_array[]);
+		void clear();
 		void convert_to_degrees();
 		void convert_to_radians();
 
