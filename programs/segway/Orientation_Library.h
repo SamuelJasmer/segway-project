@@ -81,12 +81,13 @@ class filter {
 
 
 	private: 
-		float Y_buffer[];
-		vector buffer[];
-		vector mean_buffer[];
-		float variance_buffer[];
-		vector covariance_buffer[];
+		float* Y_buffer;
+		vector* buffer;
+		vector* mean_buffer;
+		float* variance_buffer;
+		vector* covariance_buffer;
 		vector average;
+
 		std::deque<float> buffer_x;
 		std::deque<float> buffer_y;
 		std::deque<float> buffer_z;

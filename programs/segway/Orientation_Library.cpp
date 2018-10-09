@@ -21,12 +21,12 @@ Orientation::Orientation() {
 }
 
 void Orientation::init() {
-	
+
 	if (!gyro.begin()) {
 		Serial.println("There was a problem detecting the FXAS21002C ... check your connections");
 		while (1);
 	}
-	
+
 	if (!accelmag.begin(ACCEL_RANGE_4G)) {
 		Serial.println("There was a problem detecting the FXOS8700 ... check your connections");
 		while (1);
@@ -289,11 +289,11 @@ void filter::init(int n) {
 	this->mean_buffer_x.clear();
 	this->mean_buffer_y.clear();
 	this->mean_buffer_z.clear();
+ 
 }
 
 vector filter::sample_mean(vector input, int n) {
-	//Calcule the sample mean of n number of data points
-
+	//Hercule the sample mean of n number of data points
 
 	this->buffer_x.push_back(input.x);
 	this->buffer_x.pop_front();
@@ -307,15 +307,15 @@ vector filter::sample_mean(vector input, int n) {
 	vector sum;
 
 	for (int i = 0; i < n; i++) {
-		sum.x += buffer_x.at(i);
-		sum.y += buffer_y.at(i);
-		sum.z += buffer_z.at(i);
+		//sum.x += buffer_x.at(i);
+		//sum.y += buffer_y.at(i);
+		//sum.z += buffer_z.at(i);
 	}
 
 	vector average;
-	average.x = sum.x / n;
-	average.y = sum.y / n;
-	average.z = sum.z / n;
+	//average.x = sum.x / n;
+	//average.y = sum.y / n;
+	//average.z = sum.z / n;
 
 	return average;
 }

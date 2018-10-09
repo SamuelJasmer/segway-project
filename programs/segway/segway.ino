@@ -4,8 +4,6 @@
     Author:     AD\jasmersr
 */
 
-//#include "C:/Users/jasmersr/Desktop/Project/robot_project/programs/ArduinoCrashMonitor-master/CrashTracking/ApplicationMonitor.h"
-//#include "C:/Users/jasmersr/Desktop/Project/robot_project/programs/ArduinoCrashMonitor-master/CrashTracking/ApplicationMonitor.cpp"
 #include "PID.h"
 #include "L298N.h"
 #include "Orientation_Library.h"
@@ -18,11 +16,8 @@
 #include <cstring>
 #include "stdlib.h"
 #include <string>
-
-//Crash Report Library
-//Watchdog::CApplicationMonitor ApplicationMonitor;
-//int g_nIterations = 0;
-//int g_nEndOfTheWorld = 15;
+#include <vector>
+#include <iostream>
 
 #define ENA		 10
 #define IN_A1	 9
@@ -102,17 +97,14 @@ void checkSerial();
 void parseCSV(std::string input, std::vector<std::string>* argv);
 
 void setup() {
-
+	
 	Serial.begin(19200);	
 	while(!Serial);
 	serialInputBuf = new std::vector<char>();
 
-	//ApplicationMonitor.Dump(Serial);
-	//ApplicationMonitor.EnableWatchdog(Watchdog::CApplicationMonitor::Timeout_1s);
-
 	//Setup Segway:
 	segway_orientation.init();
-	//accelerometer_filter.init(n);
+	accelerometer_filter.init(n);
 
 	float i[]{ 1,0,0 };
 	float j[]{ 0,1,0 };
@@ -123,7 +115,7 @@ void setup() {
 	k_vector.set_vector(k);
 
 	//Calibrate Magnetometer
-	setup_magnetometer();
+	//setup_magnetometer();
 
 	//Run Gyroscope Calibration:
 	//Serial.println(F("Calibrating Gyro"));
@@ -133,26 +125,20 @@ void setup() {
 
 void loop() {
 
-	Serial.println("test");
-
 	//Moniter();
 	//checkSerial();
 
 	//angular_velocity = segway_orientation.measure_gyro();
 
-	///acceleration = calculate_acceleration();
-	///accel_angles = get_accel_angles(acceleration);
+	acceleration = calculate_acceleration();
+	//accel_angles = get_accel_angles(acceleration);
+	//Serial.println(accel_angles.x);
 	//accel_averaged_angles = accelerometer_filter.sample_mean(accel_angles, n);
 	//accel_smoothed = accelerometer_filter.least_squares_regression(accel_angles, n);
 	//accel_smoothed = accelerometer_filter.least_squares_regression(accel_smoothed, n);
 
 	///accel_angles = accelerometer_filter.lowess_smooth(accel_angles, n);
-	///sample_mean = accelerometer_filter.sample_mean(accel_angles, n);
-	//Serial.print(sample_mean.x);
-	//Serial.print(",");
-	//Serial.print(sample_mean.y);
-	//Serial.print(",");
-	//Serial.println(sample_mean.z);
+	sample_mean = accelerometer_filter.sample_mean(acceleration, n);
 
 	//accel_angles_variance = accelerometer_filter.sample_variance(accel_averaged_angles, accel_angles, accel_angles_variance_buffer, n);
 
@@ -291,27 +277,6 @@ void loop() {
  *
  */
 
-
-/*
-void Moniter() {
-	//Crash Moniter:
-	//Uses internal arduino watchdog timer to moniter for crashes and return offending memory address.
-
-	ApplicationMonitor.IAmAlive();
-	ApplicationMonitor.SetData(g_nIterations++);
-
-	//Serial.println("The end is nigh!!!");
-
-	if (g_nEndOfTheWorld == 0)
-	{
-		Serial.println("The end is here. Goodbye cruel world.");
-		while (1)
-			; // do nothing until the watchdog timer kicks in and resets the program. 
-	}
-}
-
-*/
-
 void calibrate_gyro() {
 	int n = 1;
 	vector sum;
@@ -335,6 +300,7 @@ void calibrate_gyro() {
 }
 
 void setup_magnetometer() {
+
 	magnetic_transformation_matrix = Matrix(3, 3);
 	magnetic_offset_matrix = Matrix(3, 1);
 	magnetometer_raw = Matrix(3, 1);
@@ -352,6 +318,7 @@ void setup_magnetometer() {
 
 vector calculate_acceleration() {
 	vector acceleration;
+
 	acceleration = segway_orientation.measure_accelerometer();
 
 	return acceleration;
