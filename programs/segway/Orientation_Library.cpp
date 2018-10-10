@@ -289,42 +289,46 @@ void vector::clear() {
 
 void filter::init(int n) {
 
-	this->buffer_x.clear();
-	this->buffer_y.clear();
-	this->buffer_z.clear();
-
 	this->mean_buffer_x.clear();
 	this->mean_buffer_y.clear();
 	this->mean_buffer_z.clear();
 
-	this->buffer_x.resize(n,0.0);
-	this->buffer_y.resize(n,0.0);
-	this->buffer_z.resize(n,0.0);
+	this->variance_buffer_x.clear();
+	this->variance_buffer_y.clear();
+	this->variance_buffer_z.clear();
+
+	this->mean_buffer_x.resize(n,0.0);
+	this->mean_buffer_y.resize(n,0.0);
+	this->mean_buffer_z.resize(n,0.0);
+
+	this->variance_buffer_x.resize(n, 0.0);
+	this->variance_buffer_y.resize(n, 0.0);
+	this->variance_buffer_z.resize(n, 0.0);
 }
 
 vector filter::sample_mean(vector input, int n) {
 	//Calculate the sample mean of n number of data points
 
-	this->buffer_x.push_back(input.x);
-	this->buffer_x.pop_front();
+	this->mean_buffer_x.push_back(input.x);
+	this->mean_buffer_x.pop_front();
 	
-	this->buffer_y.push_back(input.y);
-	this->buffer_y.pop_front();
+	this->mean_buffer_y.push_back(input.y);
+	this->mean_buffer_y.pop_front();
 
-	this->buffer_z.push_back(input.z);
-	this->buffer_z.pop_front();
+	this->mean_buffer_z.push_back(input.z);
+	this->mean_buffer_z.pop_front();
 
 	vector sum;
 	sum.clear();
 
-	if (buffer_x.size() < n || buffer_y.size() < n || buffer_z.size() < n) {
+	if (mean_buffer_x.size() < n || mean_buffer_y.size() < n || mean_buffer_z.size() < n) {
 		Serial.println("Sample mean buffer size is less than n");
 	}
 	else {
 		for (int i = 0; i < n; i++) {
-			sum.x += buffer_x.at(i);
-			sum.y += buffer_y.at(i);
-			sum.z += buffer_z.at(i);
+			sum.x += mean_buffer_x.at(i);
+			sum.y += mean_buffer_y.at(i);
+			sum.z += mean_buffer_z.at(i);
 		}
 	}
 
@@ -336,7 +340,7 @@ vector filter::sample_mean(vector input, int n) {
 	return average;
 }
 
-vector filter::sample_variance(vector sample_mean, vector current_point, int n) {
+vector filter::sample_variance(vector sample_mean, vector sample, int n) {
 
 	//Shift buffer
 	this->variance_buffer_x.push_back(sample.x);
