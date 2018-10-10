@@ -297,9 +297,9 @@ void filter::init(int n) {
 	this->variance_buffer_y.clear();
 	this->variance_buffer_z.clear();
 
-	this->mean_buffer_x.resize(n,0.0);
-	this->mean_buffer_y.resize(n,0.0);
-	this->mean_buffer_z.resize(n,0.0);
+	this->mean_buffer_x.resize(n, 0.0);
+	this->mean_buffer_y.resize(n, 0.0);
+	this->mean_buffer_z.resize(n, 0.0);
 
 	this->variance_buffer_x.resize(n, 0.0);
 	this->variance_buffer_y.resize(n, 0.0);
