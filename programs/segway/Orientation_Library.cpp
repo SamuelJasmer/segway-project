@@ -338,34 +338,7 @@ vector filter::sample_mean(vector input, int n) {
 
 vector filter::sample_variance(vector sample_mean, vector current_point, int n) {
 
-	//variance_buffer[n];
 
-	mean_buffer[n - 1].x = current_point.x;
-	mean_buffer[n - 1].y = current_point.y;
-	mean_buffer[n - 1].z = current_point.z;
-	
-	vector sum;
-
-	//sum incoming data
-	for (int i = 0; i < n; i++) {
-		sum.x += pow((mean_buffer[i].x - sample_mean.x) , 2);
-		sum.y += pow((mean_buffer[i].y - sample_mean.y) , 2);
-		sum.z += pow((mean_buffer[i].z - sample_mean.z) , 2);
-	}
-
-	vector sample_variance;
-	sample_variance.x = sum.x / (n - 1);
-	sample_variance.y = sum.y / (n - 1);
-	sample_variance.z = sum.z / (n - 1);
-
-	//shift buffer
-	for (int j = 0; j < n-1; j++) {
-		mean_buffer[j].x = mean_buffer[j + 1].x;
-		mean_buffer[j].y = mean_buffer[j + 1].y;
-		mean_buffer[j].z = mean_buffer[j + 1].z;
-	}
-
-	return sample_variance;
 }
 
 vector filter::covariance(vector sample_mean, vector current_point, int n) {
