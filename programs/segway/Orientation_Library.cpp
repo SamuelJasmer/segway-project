@@ -338,6 +338,34 @@ vector filter::sample_mean(vector input, int n) {
 
 vector filter::sample_variance(vector sample_mean, vector current_point, int n) {
 
+	//Shift buffer
+	this->variance_buffer_x.push_back(sample.x);
+	this->variance_buffer_x.pop_front();
+
+	//Shift buffer
+	this->variance_buffer_y.push_back(sample.y);
+	this->variance_buffer_y.pop_front();
+
+	//Shift buffer
+	this->variance_buffer_z.push_back(sample.z);
+	this->variance_buffer_z.pop_front();
+
+	vector sum;
+	sum.clear();
+
+	//sum incoming data
+	for (int i = 0; i < n; i++) {
+		sum.x += pow((variance_buffer_x.at(i) - sample_mean.x), 2);
+		sum.y += pow((variance_buffer_y.at(i) - sample_mean.y), 2);
+		sum.z += pow((variance_buffer_z.at(i) - sample_mean.z), 2);
+	}
+
+	vector sample_variance;
+	sample_variance.x = sum.x / (n - 1);
+	sample_variance.y = sum.y / (n - 1);
+	sample_variance.z = sum.z / (n - 1);
+
+	return sample_variance;
 
 }
 
