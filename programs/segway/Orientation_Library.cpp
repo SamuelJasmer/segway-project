@@ -381,34 +381,30 @@ vector filter::sample_variance(vector sample_mean, vector sample, int n) {
 
 }
 
-vector filter::covariance(vector sample_mean, vector current_point, int n) {
+vector filter::covariance(vector sample_mean, vector sample, int n) {
 
-	covariance_buffer[n - 1].x = current_point.x;
-	covariance_buffer[n - 1].y = current_point.y;
-	covariance_buffer[n - 1].z = current_point.z;
-	
+	//Shift buffer
+	this->covariance_buffer_x.push_back(sample.x);
+	this->covariance_buffer_x.pop_front();
+
+	//Shift buffer
+	this->covariance_buffer_y.push_back(sample.y);
+	this->covariance_buffer_y.pop_front();
+
+	//Shift buffer
+	this->covariance_buffer_z.push_back(sample.z);
+	this->covariance_buffer_z.pop_front();
+
 	vector sum;
-	int ave_n;
+	sum.clear();
 
-	for (int i = 1; i <= n; i++) {
-		ave_n += i;
-	}
-	ave_n = ave_n / n;
-
-	for (int j = 0; j < n; j++) {
-		sum.x += ((covariance_buffer[j].x - sample_mean.x) * (j - ave_n));
-		sum.y += ((covariance_buffer[j].y - sample_mean.y) * (j - ave_n));
-		sum.z += ((covariance_buffer[j].z - sample_mean.z) * (j - ave_n));
-	}
-
-	for (int k = 0; k < n-1; k++) {
-		covariance_buffer[k].x = covariance_buffer[k + 1].x;
-		covariance_buffer[k].y = covariance_buffer[k + 1].y;
-		covariance_buffer[k].z = covariance_buffer[k + 1].z;
+	for (int i = 0; i < n; i++) {
+		sum.x += ((covariance_buffer_x.at(i) - sample_mean.x) * (i - average_n));
+		sum.y += ((covariance_buffer_x.at(i) - sample_mean.y) * (i - average_n));
+		sum.z += ((covariance_buffer_x.at(i) - sample_mean.z) * (i - average_n));
 	}
 
 	vector cov;
-
 	cov.x = sum.x / n;
 	cov.y = sum.y / n;
 	cov.z = sum.z / n;

@@ -69,8 +69,8 @@ class filter {
 	public:
 		void init(int n);
 		vector sample_mean(vector input, int n);
-		vector sample_variance(vector sample_mean, vector current_point, int n);
-		vector covariance(vector sample_mean, vector current_point, int n);
+		vector sample_variance(vector sample_mean, vector sample, int n);
+		vector covariance(vector sample_mean, vector sample, int n);
 		vector standard_deviation(vector sample_variance);
 
 		vector CLT(vector variance1, vector variance2, vector sensor1, vector sensor2);
