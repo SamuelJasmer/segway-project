@@ -50,6 +50,8 @@ vector acceleration;
 vector accel_angles;
 vector accel_smoothed;
 vector sample_mean;
+vector sample_variance;
+vector covariance;
 
 //Angular Velocity Vectors:
 vector angular_velocity;
@@ -138,13 +140,24 @@ void loop() {
 	//accel_smoothed = accelerometer_filter.least_squares_regression(accel_smoothed, n);
 
 	//accel_angles = accelerometer_filter.lowess_smooth(accel_angles, n);
-	sample_mean = accelerometer_filter.sample_mean(accel_angles, n);
+	sample_mean = accelerometer_filter.sample_mean(accel_angles, n); 
+	sample_variance = accelerometer_filter.sample_variance(sample_mean, accel_angles, n);
+	//covariance = accelerometer_filter.covariance();
 
 	Serial.print(sample_mean.x);
 	Serial.print(",");
 	Serial.print(sample_mean.y);
 	Serial.print(",");
-	Serial.println(sample_mean.z);
+	Serial.print(sample_mean.z);
+	Serial.print(",");
+
+	Serial.print(sample_variance.x);
+	Serial.print(",");
+	Serial.print(sample_variance.y);
+	Serial.print(",");
+	Serial.print(sample_variance.z);
+
+	Serial.println();
 
 	//accel_angles_variance = accelerometer_filter.sample_variance(accel_averaged_angles, accel_angles, accel_angles_variance_buffer, n);
 

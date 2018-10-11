@@ -94,6 +94,10 @@ class filter {
 		std::deque<float> variance_buffer_x;
 		std::deque<float> variance_buffer_y;
 		std::deque<float> variance_buffer_z;
+
+		std::deque<float> covariance_buffer_x;
+		std::deque<float> covariance_buffer_y;
+		std::deque<float> covariance_buffer_z;
 };
 
 #endif
