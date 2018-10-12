@@ -4,6 +4,8 @@
     Author:     AD\jasmersr
 */
 
+#include "C:\Users\jasmersr\Documents\GitHub\segway-project\programs\ArduinoCrashMonitor-master/CrashTracking/ApplicationMonitor.h"
+#include "C:\Users\jasmersr\Documents\GitHub\segway-project\programs\ArduinoCrashMonitor-master/CrashTracking/ApplicationMonitor.cpp"
 #include "PID.h"
 #include "L298N.h"
 #include "Orientation_Library.h"
@@ -13,10 +15,7 @@
 #include "Adafruit_FXAS21002C.h"
 #include "Wire.h"
 #include "ArduinoSTL.h"
-#include <cstring>
 #include "stdlib.h"
-#include <string>
-#include <vector>
 #include <iostream>
 
 #define ENA		 10
@@ -29,6 +28,11 @@
 #define ANALOG_1 1
 #define ANALOG_2 2
 #define ANALOG_3 3
+
+//Crash Report Library
+Watchdog::CApplicationMonitor ApplicationMonitor;
+int g_nIterations = 0;
+int g_nEndOfTheWorld = 15;
 
 L298N MotorA(ENA, IN_A1, IN_A2);
 L298N MotorB(ENB, IN_B1, IN_B2);
@@ -65,14 +69,10 @@ vector mag_angles;
 //Sensor Smoothing Vectors:
 const int n = 5; //size of buffers
 
-vector accel_buffer[n];
 vector accel_averaged_angles;
-vector accel_angles_variance_buffer[n];
 vector accel_angles_variance;
 
-vector mag_buffer[n];
 vector mag_averaged_angles;
-vector mag_angles_variance_buffer[n];
 vector mag_angles_variance;
 
 vector angles;
@@ -94,7 +94,7 @@ int set_point = 90;
 float pid_speed = 0;
 
 //Setup Serial Plotter:
-std::vector<char>* serialInputBuf;
+//std::vector<char>* serialInputBuf;
 void checkSerial();
 void parseCSV(std::string input, std::vector<std::string>* argv);
 
@@ -102,7 +102,12 @@ void setup() {
 	
 	Serial.begin(19200);	
 	while(!Serial);
-	serialInputBuf = new std::vector<char>();
+	Serial.println(">>> Begin Setup");
+	//serialInputBuf = new std::vector<char>();
+
+	ApplicationMonitor.Dump(Serial);
+	ApplicationMonitor.EnableWatchdog(Watchdog::CApplicationMonitor::Timeout_1s);
+	//ApplicationMonitor.DisableWatchdog();
 
 	//Setup Segway:
 	segway_orientation.init();
@@ -123,11 +128,16 @@ void setup() {
 	//Serial.println(F("Calibrating Gyro"));
 	//calibrate_gyro();
 	
+
+
+	Serial.println(">>> End Setup");
 }
 
 void loop() {
 
-	//Moniter();
+	ApplicationMonitor.IAmAlive();
+	ApplicationMonitor.SetData(g_nIterations++);
+
 	//checkSerial();
 
 	//angular_velocity = segway_orientation.measure_gyro();
@@ -142,7 +152,7 @@ void loop() {
 	//accel_angles = accelerometer_filter.lowess_smooth(accel_angles, n);
 	sample_mean = accelerometer_filter.sample_mean(accel_angles, n); 
 	sample_variance = accelerometer_filter.sample_variance(sample_mean, accel_angles, n);
-	//covariance = accelerometer_filter.covariance();
+	covariance = accelerometer_filter.covariance(sample_mean, accel_angles, n);
 
 	Serial.print(sample_mean.x);
 	Serial.print(",");
@@ -151,11 +161,18 @@ void loop() {
 	Serial.print(sample_mean.z);
 	Serial.print(",");
 
-	Serial.print(sample_variance.x);
+	///Serial.print(sample_variance.x);
+	///Serial.print(",");
+	///Serial.print(sample_variance.y);
+	///Serial.print(",");
+	///Serial.print(sample_variance.z);
+	///Serial.print(",");
+
+	Serial.print(covariance.x);
 	Serial.print(",");
-	Serial.print(sample_variance.y);
+	Serial.print(covariance.y);
 	Serial.print(",");
-	Serial.print(sample_variance.z);
+	Serial.print(covariance.z);
 
 	Serial.println();
 
@@ -224,10 +241,6 @@ void loop() {
 	*/
 	
 
-	//print_pid_data();
-
-
-
 	/*
 	vector angular_velocity = segway_orientation.measure_gyro();
 	//vector angular_acceleration = segway_orientation.angular_acceleration();
@@ -288,8 +301,6 @@ void loop() {
 	Serial.print(acceleration.z);
 	
 	*/
-
-
 }
 
 /*
@@ -487,39 +498,39 @@ void print_pid_data() {
 
 void checkSerial()
 {
-	char c;
-	while (Serial.available() > 0)
-	{
-		c = (char)Serial.read();
-		if (c >= 0x20 && c < 0x7f)
-		{
-			serialInputBuf->push_back(c);
-		}
-		else if (c == '\n')
-		{
-			std::vector<std::string> inputSep;
-			std::string input(serialInputBuf->begin(), serialInputBuf->end());
-			serialInputBuf->clear();
-			
-			
-			parseCSV(input, &inputSep);
+	//char c;
+	//while (Serial.available() > 0)
+	//{
+	//	c = (char)Serial.read();
+	//	if (c >= 0x20 && c < 0x7f)
+	//	{
+	//		serialInputBuf->push_back(c);
+	//	}
+	//	else if (c == '\n')
+	//	{
+	//		std::vector<std::string> inputSep;
+	//		std::string input(serialInputBuf->begin(), serialInputBuf->end());
+	//		serialInputBuf->clear();
+	//		
+	//		
+	//		parseCSV(input, &inputSep);
 
-			/*
-			if (inputSep.size() >= 3)
-			{
-				kp = atof(inputSep[0].c_str());
-				ki = atof(inputSep[1].c_str());
-				kd = atof(inputSep[2].c_str());
-			}
-			*/
-			
-		}
-	}
+	//		/*
+	//		if (inputSep.size() >= 3)
+	//		{
+	//			kp = atof(inputSep[0].c_str());
+	//			ki = atof(inputSep[1].c_str());
+	//			kd = atof(inputSep[2].c_str());
+	//		}
+	//		*/
+	//		
+	//	}
+	//}
 }
 
 void parseCSV(std::string input, std::vector<std::string>* argv)
 {
-	std::string current = "";
+	/*std::string current = "";
 	for (int i = 0; i < input.size(); ++i)
 	{
 		if (input[i] == ',')
@@ -532,7 +543,7 @@ void parseCSV(std::string input, std::vector<std::string>* argv)
 			current += input[i];
 		}
 	}
-	argv->push_back(current);
+	argv->push_back(current);*/
 }
 
 

@@ -12,7 +12,7 @@
 #endif
 	#include "matrix.h"
 	#include "ArduinoSTL.h"
-	#include <deque>
+	#include "ringbuffer.h"
 
 
 
@@ -73,7 +73,6 @@ class filter {
 		vector covariance(vector sample_mean, vector sample, int n);
 		vector standard_deviation(vector sample_variance);
 
-		vector CLT(vector variance1, vector variance2, vector sensor1, vector sensor2);
 		vector least_squares_regression(vector input, int n);
 		Matrix create_weight_Matrix(float current_variance, int n);
 		Matrix create_error_Matrix(float current_variance, int n);
@@ -84,20 +83,21 @@ class filter {
 	private: 
 		float* Y_buffer;
 		float* variance_buffer;
-		vector* covariance_buffer;
 		vector average;
 
-		std::deque<float> mean_buffer_x;
-		std::deque<float> mean_buffer_y;
-		std::deque<float> mean_buffer_z;
+		int average_n;
 
-		std::deque<float> variance_buffer_x;
-		std::deque<float> variance_buffer_y;
-		std::deque<float> variance_buffer_z;
+		RingBuffer* mean_buffer_x;
+		RingBuffer* mean_buffer_y;
+		RingBuffer* mean_buffer_z;
 
-		std::deque<float> covariance_buffer_x;
-		std::deque<float> covariance_buffer_y;
-		std::deque<float> covariance_buffer_z;
+		RingBuffer* variance_buffer_x;
+		RingBuffer* variance_buffer_y;
+		RingBuffer* variance_buffer_z;
+
+		RingBuffer* covariance_buffer_x;
+		RingBuffer* covariance_buffer_y;
+		RingBuffer* covariance_buffer_z;
 };
 
 #endif

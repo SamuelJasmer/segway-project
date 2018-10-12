@@ -7,7 +7,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "segway", "segway.vcxproj", 
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HID", "..\..\..\..\..\AppData\Local\arduino15\packages\arduino\hardware\samd\1.6.18\libraries\HID\HID.vcxitems", "{D11F78C0-BCA4-444C-A3A7-F7148DF9A196}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ArduinoCrashMonitor-master", "..\..\..\..\..\Documents\Arduino\libraries\ArduinoCrashMonitor-master\ArduinoCrashMonitor-master.vcxitems", "{E272616A-D32C-4A72-AC4D-6F8FE01C94CA}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ArduinoCrashMonitor-master", "..\..\..\..\Arduino\libraries\ArduinoCrashMonitor-master\ArduinoCrashMonitor-master.vcxitems", "{E272616A-D32C-4A72-AC4D-6F8FE01C94CA}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "memory_count", "..\memory_count\memory_count.vcxproj", "{367D3706-BF0C-47B2-85DC-FD0649CC5336}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,6 +21,10 @@ Global
 		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Debug|x86.Build.0 = Debug|Win32
 		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|x86.ActiveCfg = Release|Win32
 		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|x86.Build.0 = Release|Win32
+		{367D3706-BF0C-47B2-85DC-FD0649CC5336}.Debug|x86.ActiveCfg = Debug|Win32
+		{367D3706-BF0C-47B2-85DC-FD0649CC5336}.Debug|x86.Build.0 = Debug|Win32
+		{367D3706-BF0C-47B2-85DC-FD0649CC5336}.Release|x86.ActiveCfg = Release|Win32
+		{367D3706-BF0C-47B2-85DC-FD0649CC5336}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

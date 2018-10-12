@@ -10,7 +10,8 @@
 #include "matrix.h"
 #include "ArduinoSTL.h"
 #include <iostream>
-#include <deque> 
+#include <stdio.h>
+#include "ringbuffer.h" 
 
 Adafruit_FXAS21002C gyro = Adafruit_FXAS21002C(0x0021002C);
 Adafruit_FXOS8700 accelmag = Adafruit_FXOS8700(0x8700A, 0x8700B);
@@ -289,54 +290,66 @@ void vector::clear() {
 
 void filter::init(int n) {
 
-	this->mean_buffer_x.clear();
-	this->mean_buffer_y.clear();
-	this->mean_buffer_z.clear();
+	for (int i = 1; i <= n; i++) {
+		this->average_n += i;
+	}
+	this->average_n = this->average_n / n;
 
-	this->variance_buffer_x.clear();
-	this->variance_buffer_y.clear();
-	this->variance_buffer_z.clear();
+	this->mean_buffer_x       = ringbuffer_new(n);
+	this->mean_buffer_y       = ringbuffer_new(n);
+	this->mean_buffer_z       = ringbuffer_new(n);
+	this->variance_buffer_x   = ringbuffer_new(n);
+	this->variance_buffer_y   = ringbuffer_new(n);
+	this->variance_buffer_z   = ringbuffer_new(n);
+	this->covariance_buffer_x = ringbuffer_new(n);
+	this->covariance_buffer_y = ringbuffer_new(n);
+	this->covariance_buffer_z = ringbuffer_new(n);
 
-	this->covariance_buffer_x.clear();
-	this->covariance_buffer_y.clear();
-	this->covariance_buffer_z.clear();
+	printf("0x%04x\n", (int)this->mean_buffer_x);
+	printf("0x%04x\n", (int)this->mean_buffer_y);
+	printf("0x%04x\n", (int)this->mean_buffer_z);
+	printf("0x%04x\n", (int)this->variance_buffer_x);
+	printf("0x%04x\n", (int)this->variance_buffer_y);
+	printf("0x%04x\n", (int)this->variance_buffer_z);
+	printf("0x%04x\n", (int)this->covariance_buffer_x);
+	printf("0x%04x\n", (int)this->covariance_buffer_y);
+	printf("0x%04x\n", (int)this->covariance_buffer_z);
 
-	this->mean_buffer_x.resize(n, 0.0);
-	this->mean_buffer_y.resize(n, 0.0);
-	this->mean_buffer_z.resize(n, 0.0);
+	ringbuffer_fill(this->mean_buffer_x, 0.0f);
+	ringbuffer_fill(this->mean_buffer_y, 0.0f);
+	ringbuffer_fill(this->mean_buffer_z, 0.0f);
+	ringbuffer_fill(this->variance_buffer_x, 0.0f);
+	ringbuffer_fill(this->variance_buffer_y, 0.0f);
+	ringbuffer_fill(this->variance_buffer_z, 0.0f);
+	ringbuffer_fill(this->covariance_buffer_x, 0.0f);
+	ringbuffer_fill(this->covariance_buffer_y, 0.0f);
+	ringbuffer_fill(this->covariance_buffer_z, 0.0f);
 
-	this->variance_buffer_x.resize(n, 0.0);
-	this->variance_buffer_y.resize(n, 0.0);
-	this->variance_buffer_z.resize(n, 0.0);
-
-	this->covariance_buffer_x.resize(n, 0.0);
-	this->covariance_buffer_y.resize(n, 0.0);
-	this->covariance_buffer_z.resize(n, 0.0);
 }
 
 vector filter::sample_mean(vector input, int n) {
 	//Calculate the sample mean of n number of data points
 
-	this->mean_buffer_x.push_back(input.x);
-	this->mean_buffer_x.pop_front();
+	ringbuffer_dequeue(this->mean_buffer_x);
+	ringbuffer_enqueue(this->mean_buffer_x, input.x);
 	
-	this->mean_buffer_y.push_back(input.y);
-	this->mean_buffer_y.pop_front();
+	ringbuffer_dequeue(this->mean_buffer_y);
+	ringbuffer_enqueue(this->mean_buffer_y, input.y);
 
-	this->mean_buffer_z.push_back(input.z);
-	this->mean_buffer_z.pop_front();
+	ringbuffer_dequeue(this->mean_buffer_z);
+	ringbuffer_enqueue(this->mean_buffer_z, input.z);
 
 	vector sum;
 	sum.clear();
 
-	if (mean_buffer_x.size() < n || mean_buffer_y.size() < n || mean_buffer_z.size() < n) {
+	if (this->mean_buffer_x->count < n || this->mean_buffer_y->count < n || this->mean_buffer_z->count < n) {
 		Serial.println("Sample mean buffer size is less than n");
 	}
 	else {
 		for (int i = 0; i < n; i++) {
-			sum.x += mean_buffer_x.at(i);
-			sum.y += mean_buffer_y.at(i);
-			sum.z += mean_buffer_z.at(i);
+			sum.x += ringbuffer_at(this->mean_buffer_x, i);
+			sum.y += ringbuffer_at(this->mean_buffer_y, i);
+			sum.z += ringbuffer_at(this->mean_buffer_z, i);
 		}
 	}
 
@@ -350,26 +363,28 @@ vector filter::sample_mean(vector input, int n) {
 
 vector filter::sample_variance(vector sample_mean, vector sample, int n) {
 
-	//Shift buffer
-	this->variance_buffer_x.push_back(sample.x);
-	this->variance_buffer_x.pop_front();
+	//shift buffer
+	ringbuffer_dequeue(this->variance_buffer_x);
+	ringbuffer_enqueue(this->variance_buffer_x, sample.x);
+	
 
-	//Shift buffer
-	this->variance_buffer_y.push_back(sample.y);
-	this->variance_buffer_y.pop_front();
+	//shift buffer
+	ringbuffer_dequeue(this->variance_buffer_y);
+	ringbuffer_enqueue(this->variance_buffer_y, sample.y);
+	
 
-	//Shift buffer
-	this->variance_buffer_z.push_back(sample.z);
-	this->variance_buffer_z.pop_front();
+	//shift buffer
+	ringbuffer_dequeue(this->variance_buffer_z);
+	ringbuffer_enqueue(this->variance_buffer_z, sample.z);
 
 	vector sum;
 	sum.clear();
 
 	//sum incoming data
 	for (int i = 0; i < n; i++) {
-		sum.x += pow((variance_buffer_x.at(i) - sample_mean.x), 2);
-		sum.y += pow((variance_buffer_y.at(i) - sample_mean.y), 2);
-		sum.z += pow((variance_buffer_z.at(i) - sample_mean.z), 2);
+		sum.x += pow((ringbuffer_at(variance_buffer_x, i) - sample_mean.x), 2);
+		sum.y += pow((ringbuffer_at(variance_buffer_y, i) - sample_mean.y), 2);
+		sum.z += pow((ringbuffer_at(variance_buffer_z, i) - sample_mean.z), 2);
 	}
 
 	vector sample_variance;
@@ -384,24 +399,24 @@ vector filter::sample_variance(vector sample_mean, vector sample, int n) {
 vector filter::covariance(vector sample_mean, vector sample, int n) {
 
 	//Shift buffer
-	this->covariance_buffer_x.push_back(sample.x);
-	this->covariance_buffer_x.pop_front();
+	ringbuffer_dequeue(this->covariance_buffer_x);
+	ringbuffer_enqueue(this->covariance_buffer_x, sample.x);
 
 	//Shift buffer
-	this->covariance_buffer_y.push_back(sample.y);
-	this->covariance_buffer_y.pop_front();
+	ringbuffer_dequeue(this->covariance_buffer_y);
+	ringbuffer_enqueue(this->covariance_buffer_y, sample.y);
 
 	//Shift buffer
-	this->covariance_buffer_z.push_back(sample.z);
-	this->covariance_buffer_z.pop_front();
+	ringbuffer_dequeue(this->covariance_buffer_z);
+	ringbuffer_enqueue(this->covariance_buffer_z, sample.z);
 
 	vector sum;
 	sum.clear();
 
 	for (int i = 0; i < n; i++) {
-		sum.x += ((covariance_buffer_x.at(i) - sample_mean.x) * (i - average_n));
-		sum.y += ((covariance_buffer_x.at(i) - sample_mean.y) * (i - average_n));
-		sum.z += ((covariance_buffer_x.at(i) - sample_mean.z) * (i - average_n));
+		sum.x += ((ringbuffer_at(covariance_buffer_x, i) - sample_mean.x) * (i - average_n));
+		sum.y += ((ringbuffer_at(covariance_buffer_y, i) - sample_mean.y) * (i - average_n));
+		sum.z += ((ringbuffer_at(covariance_buffer_z, i) - sample_mean.z) * (i - average_n));
 	}
 
 	vector cov;
@@ -424,36 +439,7 @@ vector filter::standard_deviation(vector sample_variance) {
 
 }
 
-vector filter::CLT(vector variance1, vector variance2, vector sensor1, vector sensor2) {
-	//Central Limit Theorem
-	vector variance3;
-	variance3.x = 1 / (( (1 / pow(variance1.x, 2)) + (1 / pow(variance2.x, 2)) ));
-	variance3.y = 1 / (( (1 / pow(variance1.y, 2)) + (1 / pow(variance2.y, 2)) ));
-	variance3.z = 1 / (( (1 / pow(variance1.z, 2)) + (1 / pow(variance2.z, 2)) ));
-
-	//variance3.x = (variance1.x + variance2.x) / 2;
-	//variance3.y = (variance1.y + variance2.y) / 2;
-	//variance3.z = (variance1.z + variance2.z) / 2;
-	
-	vector output;
-	output.x = variance3.x * (((1 / pow(variance1.x, 2)) * (sensor1.x)) + ((1 / pow(variance2.x, 2)) * (sensor2.x)));
-	output.y = variance3.y * (((1 / pow(variance1.y, 2)) * (sensor1.y)) + ((1 / pow(variance2.y, 2)) * (sensor2.y)));
-	output.z = variance3.z * (((1 / pow(variance1.z, 2)) * (sensor1.z)) + ((1 / pow(variance2.z, 2)) * (sensor2.z)));
-
-	//Serial.print(variance3.y);
-	//Serial.print(",");
-
-	return output;
-}
-
 vector filter::least_squares_regression(vector input, int n) {
-
-	int ave_n;
-	for (int i = 1; i <= n; i++) {
-		ave_n += i;
-	}
-
-	ave_n = ave_n / n;
 
 	vector mean = this->sample_mean(input, n);
 	vector cov = this->covariance(mean, input, n);
@@ -465,9 +451,9 @@ vector filter::least_squares_regression(vector input, int n) {
 	b.z = cov.z / variance.z;
 
 	vector a;
-	a.x = mean.x - b.x * ave_n;
-	a.y = mean.y - b.y * ave_n;
-	a.z = mean.z - b.z * ave_n;
+	a.x = mean.x - b.x * this->average_n;
+	a.y = mean.y - b.y * this->average_n;
+	a.z = mean.z - b.z * this->average_n;
 
 	vector output;
 
@@ -476,7 +462,6 @@ vector filter::least_squares_regression(vector input, int n) {
 	output.z = a.z + b.z * (n / 2);
 
 	return output;
-
 }
 
 Matrix filter::create_error_Matrix(float current_variance, int n) {

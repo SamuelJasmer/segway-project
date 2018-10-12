@@ -95,6 +95,7 @@
     <ClInclude Include="PID.h">
       <FileType>CppCode</FileType>
     </ClInclude>
+    <ClInclude Include="ringbuffer.h" />
     <ClInclude Include="__vm\.segway.vsarduino.h" />
   </ItemGroup>
   <ItemGroup>
@@ -102,6 +103,7 @@
     <ClCompile Include="matrix.cpp" />
     <ClCompile Include="Orientation_Library.cpp" />
     <ClCompile Include="PID.cpp" />
+    <ClCompile Include="ringbuffer.cpp" />
   </ItemGroup>
   <PropertyGroup>
     <DebuggerFlavor>VisualMicroDebugger</DebuggerFlavor>
