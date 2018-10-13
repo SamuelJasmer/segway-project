@@ -4,8 +4,6 @@
     Author:     AD\jasmersr
 */
 
-#include "C:\Users\jasmersr\Documents\GitHub\segway-project\programs\ArduinoCrashMonitor-master/CrashTracking/ApplicationMonitor.h"
-#include "C:\Users\jasmersr\Documents\GitHub\segway-project\programs\ArduinoCrashMonitor-master/CrashTracking/ApplicationMonitor.cpp"
 #include "PID.h"
 #include "L298N.h"
 #include "Orientation_Library.h"
@@ -14,9 +12,7 @@
 #include "Adafruit_FXOS8700.h"
 #include "Adafruit_FXAS21002C.h"
 #include "Wire.h"
-#include "ArduinoSTL.h"
-#include "stdlib.h"
-#include <iostream>
+#include <stdlib.h>
 
 #define ENA		 10
 #define IN_A1	 9
@@ -28,11 +24,6 @@
 #define ANALOG_1 1
 #define ANALOG_2 2
 #define ANALOG_3 3
-
-//Crash Report Library
-Watchdog::CApplicationMonitor ApplicationMonitor;
-int g_nIterations = 0;
-int g_nEndOfTheWorld = 15;
 
 L298N MotorA(ENA, IN_A1, IN_A2);
 L298N MotorB(ENB, IN_B1, IN_B2);
@@ -67,15 +58,7 @@ vector magnetism;
 vector mag_angles;
 
 //Sensor Smoothing Vectors:
-const int n = 5; //size of buffers
-
-vector accel_averaged_angles;
-vector accel_angles_variance;
-
-vector mag_averaged_angles;
-vector mag_angles_variance;
-
-vector angles;
+const int n = 4; //size of buffers
 
 //Magnetic Calibration Matricies:
 Matrix magnetic_transformation_matrix;
@@ -96,7 +79,7 @@ float pid_speed = 0;
 //Setup Serial Plotter:
 //std::vector<char>* serialInputBuf;
 void checkSerial();
-void parseCSV(std::string input, std::vector<std::string>* argv);
+//void parseCSV(std::string input, std::vector<std::string>* argv);
 
 void setup() {
 	
@@ -104,10 +87,6 @@ void setup() {
 	while(!Serial);
 	Serial.println(">>> Begin Setup");
 	//serialInputBuf = new std::vector<char>();
-
-	ApplicationMonitor.Dump(Serial);
-	ApplicationMonitor.EnableWatchdog(Watchdog::CApplicationMonitor::Timeout_1s);
-	//ApplicationMonitor.DisableWatchdog();
 
 	//Setup Segway:
 	segway_orientation.init();
@@ -135,8 +114,6 @@ void setup() {
 
 void loop() {
 
-	ApplicationMonitor.IAmAlive();
-	ApplicationMonitor.SetData(g_nIterations++);
 
 	//checkSerial();
 
@@ -152,27 +129,32 @@ void loop() {
 	//accel_angles = accelerometer_filter.lowess_smooth(accel_angles, n);
 	sample_mean = accelerometer_filter.sample_mean(accel_angles, n); 
 	sample_variance = accelerometer_filter.sample_variance(sample_mean, accel_angles, n);
-	covariance = accelerometer_filter.covariance(sample_mean, accel_angles, n);
+	//covariance = accelerometer_filter.covariance(sample_mean, accel_angles, n);
 
-	Serial.print(sample_mean.x);
-	Serial.print(",");
-	Serial.print(sample_mean.y);
-	Serial.print(",");
-	Serial.print(sample_mean.z);
-	Serial.print(",");
+	//Serial.print(accel_angles.x);
+	//Serial.print(",");
+	//Serial.print(accel_angles.y);
+	//Serial.print(",");
+	//Serial.print(accel_angles.z);
+	//Serial.print(",");
 
-	///Serial.print(sample_variance.x);
+	///Serial.print(sample_mean.x);
 	///Serial.print(",");
-	///Serial.print(sample_variance.y);
+	///Serial.print(sample_mean.y);
 	///Serial.print(",");
-	///Serial.print(sample_variance.z);
-	///Serial.print(",");
+	///Serial.print(sample_mean.z);
 
-	Serial.print(covariance.x);
+	Serial.print(sample_variance.x);
 	Serial.print(",");
-	Serial.print(covariance.y);
+	Serial.print(sample_variance.y);
 	Serial.print(",");
-	Serial.print(covariance.z);
+	Serial.print(sample_variance.z);
+
+	///Serial.print(covariance.x);
+	///Serial.print(",");
+	///Serial.print(covariance.y);
+	///Serial.print(",");
+	///Serial.print(covariance.z);
 
 	Serial.println();
 
@@ -528,6 +510,7 @@ void checkSerial()
 	//}
 }
 
+/*
 void parseCSV(std::string input, std::vector<std::string>* argv)
 {
 	/*std::string current = "";
@@ -544,6 +527,4 @@ void parseCSV(std::string input, std::vector<std::string>* argv)
 		}
 	}
 	argv->push_back(current);*/
-}
-
-
+//}*/

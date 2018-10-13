@@ -13,7 +13,6 @@
 #ifndef _VSARDUINO_H_
 #define _VSARDUINO_H_
 #define __PIC32_32MZ2048EFG100__
-#define _VMDEBUG 1
 #define ARDUINO_ARCH_PIC32
 #define F_CPU 200000000UL
 #define ARDUINO 10806
@@ -45,6 +44,6 @@ extern "C" void __cxa_pure_virtual() { ; }
 #include <EFADC.h> 
 #undef cli
 #define cli()
-#include "memory_count.ino"
+#include "chipkit_project.ino"
 #endif
 #endif

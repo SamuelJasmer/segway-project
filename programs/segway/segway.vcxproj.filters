@@ -16,7 +16,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="segway.ino" />
-    <None Include="test.ino" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="__vm\.segway.vsarduino.h">

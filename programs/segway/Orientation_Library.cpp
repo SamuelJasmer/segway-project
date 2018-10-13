@@ -8,8 +8,6 @@
 #include <Adafruit_FXAS21002C.h>
 #include <Wire.h>
 #include "matrix.h"
-#include "ArduinoSTL.h"
-#include <iostream>
 #include <stdio.h>
 #include "ringbuffer.h" 
 
@@ -42,13 +40,6 @@ void Orientation::init() {
 	this->angular_velocity_final.z = 0;
 
 	//gyro buffer
-	this->gyro_buffer_x[0] = 0;
-	this->gyro_buffer_y[0] = 0;
-	this->gyro_buffer_z[0] = 0;
-
-	this->gyro_buffer_x[1] = 0;
-	this->gyro_buffer_y[1] = 0;
-	this->gyro_buffer_z[1] = 0;
 }
 
 vector Orientation::measure_gyro() {
@@ -75,11 +66,11 @@ vector Orientation::measure_gyro() {
 
 vector Orientation::smooth_gyro(vector gyro_vector) {
 
-	this->gyro_buffer_x[2] = gyro_vector.x;
+	/*this->gyro_buffer_x[2] = gyro_vector.x;
 	this->gyro_buffer_y[2] = gyro_vector.y;
 	this->gyro_buffer_z[2] = gyro_vector.z;
 
-	vector averaged_gyro;
+	
 
 	averaged_gyro.x = Orientation::moving_average_3n(gyro_buffer_x);
 	averaged_gyro.y = Orientation::moving_average_3n(gyro_buffer_y);
@@ -92,7 +83,8 @@ vector Orientation::smooth_gyro(vector gyro_vector) {
 	this->gyro_buffer_x[1] = this->gyro_buffer_x[2];
 	this->gyro_buffer_y[1] = this->gyro_buffer_y[2];
 	this->gyro_buffer_z[1] = this->gyro_buffer_z[2];
-
+*/
+	vector averaged_gyro;
 	return averaged_gyro;
 
 }
@@ -304,6 +296,9 @@ void filter::init(int n) {
 	this->covariance_buffer_x = ringbuffer_new(n);
 	this->covariance_buffer_y = ringbuffer_new(n);
 	this->covariance_buffer_z = ringbuffer_new(n);
+	this->error_buffer		  = ringbuffer_new(n);
+	this->weight_buffer		  = ringbuffer_new(n);
+	this->Y_buffer			  = ringbuffer_new(n);
 
 	printf("0x%04x\n", (int)this->mean_buffer_x);
 	printf("0x%04x\n", (int)this->mean_buffer_y);
@@ -314,6 +309,9 @@ void filter::init(int n) {
 	printf("0x%04x\n", (int)this->covariance_buffer_x);
 	printf("0x%04x\n", (int)this->covariance_buffer_y);
 	printf("0x%04x\n", (int)this->covariance_buffer_z);
+	printf("0x%04x\n", (int)this->error_buffer);
+	printf("0x%04x\n", (int)this->weight_buffer);
+	printf("0x%04x\n", (int)this->Y_buffer);
 
 	ringbuffer_fill(this->mean_buffer_x, 0.0f);
 	ringbuffer_fill(this->mean_buffer_y, 0.0f);
@@ -324,6 +322,9 @@ void filter::init(int n) {
 	ringbuffer_fill(this->covariance_buffer_x, 0.0f);
 	ringbuffer_fill(this->covariance_buffer_y, 0.0f);
 	ringbuffer_fill(this->covariance_buffer_z, 0.0f);
+	ringbuffer_fill(this->error_buffer, 0.0f);
+	ringbuffer_fill(this->weight_buffer, 0.0f);
+	ringbuffer_fill(this->Y_buffer, 0.0f);
 
 }
 
@@ -367,11 +368,9 @@ vector filter::sample_variance(vector sample_mean, vector sample, int n) {
 	ringbuffer_dequeue(this->variance_buffer_x);
 	ringbuffer_enqueue(this->variance_buffer_x, sample.x);
 	
-
 	//shift buffer
 	ringbuffer_dequeue(this->variance_buffer_y);
 	ringbuffer_enqueue(this->variance_buffer_y, sample.y);
-	
 
 	//shift buffer
 	ringbuffer_dequeue(this->variance_buffer_z);
@@ -466,35 +465,17 @@ vector filter::least_squares_regression(vector input, int n) {
 
 Matrix filter::create_error_Matrix(float current_variance, int n) {
 
-	variance_buffer[n - 1] = current_variance;
+	//Shift buffer
+	ringbuffer_dequeue(this->error_buffer);
+	ringbuffer_enqueue(this->error_buffer, current_variance);
 
 	Matrix Error_matrix;
 	Error_matrix = Matrix(n, 1);
 
-	/*
-	//Create Error Matrix
-	for (int row; row++; row < n) {
-		//row
-		for (int col; col++; col < n) {
-			//column
-			if (row == col) {
-				Error_matrix.set(row, col, variance_buffer[n]);
-			}
-			else {
-				Error_matrix.set(row, col, 0);
-			}
-		}
-	}
-	*/
-
 	//Create Error Matrix
 	for (int i = 0; i < n; i++) {
-		Error_matrix.set(i, 0, variance_buffer[i]);
-	}
-
-	for (int j = 0; j < n-1; j++) {
-
-		variance_buffer[j] = variance_buffer[j + 1];
+		//Create a column vector of length n with each position as the current variance at i
+		Error_matrix.set(i, 0, ringbuffer_at(error_buffer, i));
 	}
 
 	return Error_matrix;
@@ -502,28 +483,27 @@ Matrix filter::create_error_Matrix(float current_variance, int n) {
 
 Matrix filter::create_weight_Matrix(float current_variance, int n) {
 
-	variance_buffer[n - 1] = current_variance;
+	//Shift buffer
+	ringbuffer_dequeue(this->weight_buffer);
+	ringbuffer_enqueue(this->weight_buffer, current_variance);
 
 	Matrix Weight_matrix;
 	Weight_matrix = Matrix(n, n);
 
 	//Create Weight Matrix
-	for (int row; row++; row < n) {
+	for (int row = 0; row < n; row++) {
 		//row
-		for (int col; col++; col < n) {
+		for (int col = 0; col < n; col++) {
 			//column
 			if (row == col) {
-				Weight_matrix.set(row, col, 1 / variance_buffer[n]);
+				//set diagonal positions to ( 1 / current variance ) at that row
+				Weight_matrix.set(row, col, 1 / ringbuffer_at(weight_buffer, row));
 			}
 			else {
+				//set non diagonal positions to 0
 				Weight_matrix.set(row, col, 0);
 			}
 		}
-	}
-
-	for (int i = 0; i < n; i++) {
-
-		variance_buffer[i] = variance_buffer[i + 1];
 	}
 
 	return Weight_matrix;
@@ -531,13 +511,8 @@ Matrix filter::create_weight_Matrix(float current_variance, int n) {
 
 Matrix filter::weighted_least_squares_regression(float input, float variance, int n) {
 
-	int ave_n;
-	for (int i = 1; i <= n; i++) {
-		ave_n += i;
-	}
-	ave_n = ave_n / n;
-
-	Y_buffer[n - 1] = input;
+	ringbuffer_dequeue(this->Y_buffer);
+	ringbuffer_enqueue(this->Y_buffer, input);
 
 	Matrix X_Matrix;
 	X_Matrix = Matrix(n, 2);
@@ -554,16 +529,12 @@ Matrix filter::weighted_least_squares_regression(float input, float variance, in
 	for (int i = 0; i < n; i++) {
 		X_Matrix.set(i, 0, i);
 		X_Matrix.set(i, 1, i);
-		Y_Matrix.set(i, 0, Y_buffer[i]);
+		Y_Matrix.set(i, 0, ringbuffer_at(Y_buffer, i));
 	}
 
 	//Calculate slope
 
 	B_Matrix = (X_Matrix.transpose() * Weight_Matrix * X_Matrix).inverse() * (X_Matrix.transpose() * Weight_Matrix * Y_Matrix);
-
-	for (int j = 0; j < n-1; j++) {
-		Y_buffer[j] = Y_buffer[j + 1];
-	}
 
 	return B_Matrix;
 }
@@ -571,7 +542,6 @@ Matrix filter::weighted_least_squares_regression(float input, float variance, in
 vector filter::lowess_smooth(vector input, int n) {
 
 	vector mean = this->sample_mean(input, n);
-	vector cov = this->covariance(mean, input, n);
 	vector variance = this->sample_variance(mean, input, n);
 
 	Matrix B_Matrix_x;

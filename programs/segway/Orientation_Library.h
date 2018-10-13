@@ -11,7 +11,6 @@
 	#include "WProgram.h"
 #endif
 	#include "matrix.h"
-	#include "ArduinoSTL.h"
 	#include "ringbuffer.h"
 
 
@@ -58,10 +57,6 @@ class Orientation {
 
 	private:
 		float delta_t = 0;	
-
-		float gyro_buffer_x[3];
-		float gyro_buffer_y[3];
-		float gyro_buffer_z[3];
 };
 
 class filter {
@@ -81,8 +76,6 @@ class filter {
 
 
 	private: 
-		float* Y_buffer;
-		float* variance_buffer;
 		vector average;
 
 		int average_n;
@@ -98,6 +91,10 @@ class filter {
 		RingBuffer* covariance_buffer_x;
 		RingBuffer* covariance_buffer_y;
 		RingBuffer* covariance_buffer_z;
+
+		RingBuffer* error_buffer;
+		RingBuffer* weight_buffer;
+		RingBuffer* Y_buffer;
 };
 
 #endif
