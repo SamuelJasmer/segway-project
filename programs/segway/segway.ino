@@ -76,6 +76,9 @@ float kd = 0.0;
 int set_point = 90;
 float pid_speed = 0;
 
+int t_initial = 0;
+int delta_t = 10;
+
 //Setup Serial Plotter:
 //std::vector<char>* serialInputBuf;
 void checkSerial();
@@ -114,12 +117,16 @@ void setup() {
 
 void loop() {
 
+	while (millis() - t_initial < delta_t);
 
+	t_initial = millis();
 	//checkSerial();
 
 	//angular_velocity = segway_orientation.measure_gyro();
 
+
 	acceleration = calculate_acceleration();
+
 	accel_angles = get_accel_angles(acceleration);
 	//Serial.println(accel_angles.x);
 	//accel_averaged_angles = accelerometer_filter.sample_mean(accel_angles, n);
@@ -131,8 +138,8 @@ void loop() {
 	sample_variance = accelerometer_filter.sample_variance(sample_mean, accel_angles, n);
 	//covariance = accelerometer_filter.covariance(sample_mean, accel_angles, n);
 
-	//Serial.print(accel_angles.x);
-	//Serial.print(",");
+	Serial.print(accel_angles.x);
+	Serial.print(",");
 	//Serial.print(accel_angles.y);
 	//Serial.print(",");
 	//Serial.print(accel_angles.z);
@@ -145,10 +152,10 @@ void loop() {
 	///Serial.print(sample_mean.z);
 
 	Serial.print(sample_variance.x);
-	Serial.print(",");
-	Serial.print(sample_variance.y);
-	Serial.print(",");
-	Serial.print(sample_variance.z);
+	//Serial.print(",");
+	//Serial.print(sample_variance.y);
+	//Serial.print(",");
+	//Serial.print(sample_variance.z);
 
 	///Serial.print(covariance.x);
 	///Serial.print(",");

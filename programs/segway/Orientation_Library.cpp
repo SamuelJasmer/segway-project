@@ -381,9 +381,9 @@ vector filter::sample_variance(vector sample_mean, vector sample, int n) {
 
 	//sum incoming data
 	for (int i = 0; i < n; i++) {
-		sum.x += pow((ringbuffer_at(variance_buffer_x, i) - sample_mean.x), 2);
-		sum.y += pow((ringbuffer_at(variance_buffer_y, i) - sample_mean.y), 2);
-		sum.z += pow((ringbuffer_at(variance_buffer_z, i) - sample_mean.z), 2);
+		sum.x += sq((ringbuffer_at(variance_buffer_x, i) - sample_mean.x));
+		sum.y += sq((ringbuffer_at(variance_buffer_y, i) - sample_mean.y));
+		sum.z += sq((ringbuffer_at(variance_buffer_z, i) - sample_mean.z));
 	}
 
 	vector sample_variance;
