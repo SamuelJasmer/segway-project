@@ -8,6 +8,7 @@
 #include "L298N.h"
 #include "Orientation_Library.h"
 #include "matrix.h"
+#include "vector3.h"
 #include "Adafruit_Sensor.h"
 #include "Adafruit_FXOS8700.h"
 #include "Adafruit_FXAS21002C.h"
@@ -82,8 +83,8 @@ void checkSerial();
 //void parseCSV(std::string input, std::vector<std::string>* argv);
 
 void setup() {
-	
-	Serial.begin(19200);	
+
+	Serial.begin(19200);
 	while(!Serial);
 	Serial.println(">>> Begin Setup");
 	//serialInputBuf = new std::vector<char>();
@@ -106,7 +107,7 @@ void setup() {
 	//Run Gyroscope Calibration:
 	//Serial.println(F("Calibrating Gyro"));
 	//calibrate_gyro();
-	
+
 
 
 	Serial.println(">>> End Setup");
@@ -127,7 +128,7 @@ void loop() {
 	//accel_smoothed = accelerometer_filter.least_squares_regression(accel_smoothed, n);
 
 	//accel_angles = accelerometer_filter.lowess_smooth(accel_angles, n);
-	sample_mean = accelerometer_filter.sample_mean(accel_angles, n); 
+	sample_mean = accelerometer_filter.sample_mean(accel_angles, n);
 	sample_variance = accelerometer_filter.sample_variance(sample_mean, accel_angles, n);
 	//covariance = accelerometer_filter.covariance(sample_mean, accel_angles, n);
 
@@ -188,7 +189,7 @@ void loop() {
 	//Serial.print(mag_angles_variance.y);
 //
 	//Serial.println();
-	
+
 
 	/*
 	pid.set_k_values(kp, ki, kd);
@@ -221,7 +222,7 @@ void loop() {
 		MotorA.stop();
 	}
 	*/
-	
+
 
 	/*
 	vector angular_velocity = segway_orientation.measure_gyro();
@@ -281,7 +282,7 @@ void loop() {
 	Serial.print(acceleration.y);
 	Serial.print(" , ");
 	Serial.print(acceleration.z);
-	
+
 	*/
 }
 
@@ -493,8 +494,8 @@ void checkSerial()
 	//		std::vector<std::string> inputSep;
 	//		std::string input(serialInputBuf->begin(), serialInputBuf->end());
 	//		serialInputBuf->clear();
-	//		
-	//		
+	//
+	//
 	//		parseCSV(input, &inputSep);
 
 	//		/*
@@ -505,7 +506,7 @@ void checkSerial()
 	//			kd = atof(inputSep[2].c_str());
 	//		}
 	//		*/
-	//		
+	//
 	//	}
 	//}
 }

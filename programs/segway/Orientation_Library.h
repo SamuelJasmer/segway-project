@@ -12,27 +12,7 @@
 #endif
 	#include "matrix.h"
 	#include "ringbuffer.h"
-
-
-
-struct vector {
-
-	public:
-		float x;
-		float y;
-		float z;
-		float magnitude();
-
-		void set_vector(float vector_array[]);
-		void clear();
-		void convert_to_degrees();
-		void convert_to_radians();
-
-		vector cross_product(vector v);
-
-		float dot_product(vector v);
-		float angle_between_vectors(vector v);
-};
+	#include "vector3.h"
 
 class Orientation {
 
@@ -56,7 +36,7 @@ class Orientation {
 		vector angular_velocity_final;
 
 	private:
-		float delta_t = 0;	
+		float delta_t = 0;
 };
 
 class filter {
@@ -75,7 +55,7 @@ class filter {
 		vector lowess_smooth(vector input, int n);
 
 
-	private: 
+	private:
 		vector average;
 
 		int average_n;

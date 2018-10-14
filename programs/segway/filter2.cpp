@@ -1,14 +1,15 @@
 #include "filter2.h"
 
-#include "Matrix.h"
-#include "Orientation_Library.h"
+#include <math.h>
+#include "matrix.h"
+#include "vector3.h"
 
 bool filter2::init(int buffer_size) {
 
     // Delete existing buffers
     this->deinit();
 
-    this->_bufferSize = buffer_size;
+    this->_buffer_size = buffer_size;
 
     // 1+2+3+... = n(n+1)/2, averaging cancels n
     this->_average_n = (float)(buffer_size + 1) / 2;
@@ -44,7 +45,7 @@ bool filter2::init(int buffer_size) {
 }
 
 void filter2::deinit() {
-    if (this->_bufferSize == 0) return;
+    if (this->_buffer_size == 0) return;
 
     if (this->in_buf_x  != NULL) ringbuffer_destroy(this->in_buf_x);
     if (this->in_buf_y  != NULL) ringbuffer_destroy(this->in_buf_y);
@@ -60,7 +61,7 @@ void filter2::deinit() {
     this->var_buf_y  = NULL;
     this->var_buf_z  = NULL;
 
-    this->_bufferSize = 0;
+    this->_buffer_size = 0;
 }
 
 void filter2::add_sample(vector input) {
@@ -88,7 +89,7 @@ void filter2::add_sample(vector input) {
 
 //region Getters
 int filter2::buffer_size() {
-    return this->_bufferSize;
+    return this->_buffer_size;
 }
 
 vector filter2::sample_mean() {
@@ -124,28 +125,28 @@ vector filter2::least_squares_regression() {
     a.z = mean.z - (b.z * this->_average_n);
 
     vector output;
-    output.x = a.x + b.x * (this->_bufferSize / 2);
-    output.y = a.y + b.y * (this->_bufferSize / 2);
-    output.z = a.z + b.z * (this->_bufferSize / 2);
+    output.x = a.x + b.x * (this->_buffer_size / 2);
+    output.y = a.y + b.y * (this->_buffer_size / 2);
+    output.z = a.z + b.z * (this->_buffer_size / 2);
 
     return output;
 }
 
-Matrix filter2::weighted_least_squares_regression(Ringbuffer* yValues, Ringbuffer* variances) {
+Matrix filter2::weighted_least_squares_regression(RingBuffer* yValues, RingBuffer* variances) {
 
     Matrix X_Matrix;
-	X_Matrix = Matrix(this->_bufferSize, 2);
+	X_Matrix = Matrix(this->_buffer_size, 2);
 
 	Matrix Y_Matrix;
-	Y_Matrix = Matrix(this->_bufferSize, 1);
+	Y_Matrix = Matrix(this->_buffer_size, 1);
 
 	Matrix B_Matrix;
 	B_Matrix = Matrix(2, 1);
 
-	Matrix Error_Matrix = create_error_matrix(variances);
-	Matrix Weight_Matrix = create_weight_matrix(variances);
+	Matrix Error_Matrix = this->create_error_matrix(variances);
+	Matrix Weight_Matrix = this->create_weight_matrix(variances);
 
-    for (int i = 0; i < this->_bufferSize; i++) {
+    for (int i = 0; i < this->_buffer_size; i++) {
 		X_Matrix.set(i, 0, i);
 		X_Matrix.set(i, 1, i);
 		Y_Matrix.set(i, 0, ringbuffer_at(yValues, i));
@@ -168,7 +169,7 @@ vector filter2::lowess_smooth() {
 	Matrix B_Matrix_z;
 	B_Matrix_z = weighted_least_squares_regression(this->in_buf_z, this->var_buf_z);
 
-    int n = this->_bufferSize;
+    int n = this->_buffer_size;
     vector output;
 	output.x = B_Matrix_x.get(0, 0) * ((float)n / 2) + B_Matrix_x.get(1, 0);
 	output.y = B_Matrix_y.get(0, 0) * ((float)n / 2) + B_Matrix_y.get(1, 0);
@@ -182,24 +183,24 @@ vector filter2::lowess_smooth() {
 void filter2::calculate_mean() {
     vector sum;
     sum.clear;
-    for (int i = 0; i < this->_bufferSize; i++) {
+    for (int i = 0; i < this->_buffer_size; i++) {
         sum.x += ringbuffer_at(this->in_buf_x, i);
         sum.y += ringbuffer_at(this->in_buf_y, i);
         sum.z += ringbuffer_at(this->in_buf_z, i);
     }
 
-    this->_mean.x = sum.x / this->_bufferSize;
-    this->_mean.y = sum.y / this->_bufferSize;
-    this->_mean.z = sum.z / this->_bufferSize;
+    this->_mean.x = sum.x / this->_buffer_size;
+    this->_mean.y = sum.y / this->_buffer_size;
+    this->_mean.z = sum.z / this->_buffer_size;
 }
 
 void filter2::calculate_variance() {
     vector sum;
 	sum.clear();
-	for (int i = 0; i < this->_bufferSize; i++) {
-		sum.x += pow((ringbuffer_at(this->in_buf_x, i) - sample_mean.x), 2);
-		sum.y += pow((ringbuffer_at(this->in_buf_y, i) - sample_mean.y), 2);
-		sum.z += pow((ringbuffer_at(this->in_buf_z, i) - sample_mean.z), 2);
+	for (int i = 0; i < this->_buffer_size; i++) {
+		sum.x += pow((ringbuffer_at(this->in_buf_x, i) - this->_mean.x), 2);
+		sum.y += pow((ringbuffer_at(this->in_buf_y, i) - this->_mean.y), 2);
+		sum.z += pow((ringbuffer_at(this->in_buf_z, i) - this->_mean.z), 2);
 	}
 
     this->_variance.x = sum.x / (this->_buffer_size - 1);
@@ -210,10 +211,10 @@ void filter2::calculate_variance() {
 void filter2::calculate_covariance() {
     vector sum;
 	sum.clear();
-	for (int i = 0; i < this->_bufferSize; i++) {
-		sum.x += pow((ringbuffer_at(this->in_buf_x, i) - sample_mean.x) * (i - this->_average_n), 2);
-		sum.y += pow((ringbuffer_at(this->in_buf_y, i) - sample_mean.y) * (i - this->_average_n), 2);
-		sum.z += pow((ringbuffer_at(this->in_buf_z, i) - sample_mean.z) * (i - this->_average_n), 2);
+	for (int i = 0; i < this->_buffer_size; i++) {
+		sum.x += pow((ringbuffer_at(this->in_buf_x, i) - this->_mean.x) * (i - this->_average_n), 2);
+		sum.y += pow((ringbuffer_at(this->in_buf_y, i) - this->_mean.y) * (i - this->_average_n), 2);
+		sum.z += pow((ringbuffer_at(this->in_buf_z, i) - this->_mean.z) * (i - this->_average_n), 2);
 	}
 
     this->_variance.x = sum.x / (this->_buffer_size - 1);
@@ -228,7 +229,7 @@ void filter2::calculate_standard_deviation() {
 }
 //endregion
 
-Matrix filter2::create_error_matrix(Ringbuffer* variances) {
+Matrix filter2::create_error_matrix(RingBuffer* variances) {
 
     int n = variances->count;
 	Matrix Error_matrix;
@@ -243,7 +244,7 @@ Matrix filter2::create_error_matrix(Ringbuffer* variances) {
 	return Error_matrix;
 }
 
-Matrix filter2::create_weight_matrix(Ringbuffer* variances) {
+Matrix filter2::create_weight_matrix(RingBuffer* variances) {
 
     int n = variances->count;
 	Matrix Weight_matrix;

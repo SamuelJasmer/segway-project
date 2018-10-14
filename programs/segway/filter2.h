@@ -1,8 +1,9 @@
 #ifndef FILTER2_H
 #define FILTER2_H
 
+#include "matrix.h"
 #include "ringbuffer.h"
-#include "Orientation_Library.h"
+#include "vector3.h"
 
 class filter2 {
 
@@ -61,13 +62,13 @@ class filter2 {
          */
 		vector standard_deviation();
 
-		vector least_squares_regression(vector input, int n);
-		Matrix weighted_least_squares_regression(Ringbuffer* yValues, Ringbuffer* variances);
-		vector lowess_smooth(vector input, int n);
+		vector least_squares_regression();
+		Matrix weighted_least_squares_regression(RingBuffer* yValues, RingBuffer* variances);
+		vector lowess_smooth();
 
 
 	private:
-        int _bufferSize;
+        int _buffer_size;
         float _average_n;
 
         // Saved Statistic Values
@@ -116,7 +117,7 @@ class filter2 {
          * @param  variances: RingBuffer whose values should be copied
          * @retval An nx1 matrix
          */
-		Matrix create_error_Matrix(Ringbuffer* variances);
+		Matrix create_error_matrix(RingBuffer* variances);
 
         /**
          * @brief  Creates an nxn diagonal matrix from the values in the
@@ -124,7 +125,7 @@ class filter2 {
          * @param  variances: RingBuffer whose values should be copied
          * @retval An nxn diagonal matrix
          */
-        Matrix create_weight_Matrix(Ringbuffer* variances);
+        Matrix create_weight_matrix(RingBuffer* variances);
 };
 
 #endif
