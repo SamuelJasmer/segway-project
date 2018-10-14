@@ -9,7 +9,8 @@
 #include <Wire.h>
 #include "matrix.h"
 #include <stdio.h>
-#include "ringbuffer.h" 
+#include "ringbuffer.h"
+#include "vector3.h"
 
 Adafruit_FXAS21002C gyro = Adafruit_FXAS21002C(0x0021002C);
 Adafruit_FXOS8700 accelmag = Adafruit_FXOS8700(0x8700A, 0x8700B);
@@ -70,7 +71,7 @@ vector Orientation::smooth_gyro(vector gyro_vector) {
 	this->gyro_buffer_y[2] = gyro_vector.y;
 	this->gyro_buffer_z[2] = gyro_vector.z;
 
-	
+
 
 	averaged_gyro.x = Orientation::moving_average_3n(gyro_buffer_x);
 	averaged_gyro.y = Orientation::moving_average_3n(gyro_buffer_y);
@@ -123,7 +124,7 @@ vector Orientation::measure_accelerometer() {
 	float z = aevent.acceleration.z;
 	int t_final = micros();
 	this->delta_t = (t_final - t_initial);
-	
+
 	//create acceleration vector:
 	vector accelerometer_vector;
 	accelerometer_vector.x = x;
@@ -195,7 +196,7 @@ vector Orientation::integrate_vector(vector u) {
 }
 
 float Orientation::get_delta_t() {
-	
+
 	return this->delta_t;
 }
 
@@ -211,68 +212,6 @@ float Orientation::moving_average_3n(float data_in[3]) {
 	float MA = (buffer[0] + buffer[1] + buffer[2]) / n;
 
 	return MA;
-}
-
-/*
-* Vector Methods
-*/
-
-float vector::magnitude() {
-	//calculate the magnitude of this vector:
-	float magnitude = sqrt(sq(this->x) + sq(this->y) + sq(this->z));
-
-	return magnitude;
-}
-
-float vector::dot_product(vector v) {
-	//calculate the dot product of this vector with given vector v:
-	float n = (this->x * v.x) + (this->y * v.y) + (this->z * v.z);
-	return n;
-}
-
-float vector::angle_between_vectors(vector v) {
-	//calculate the angle between this vector and given vector v:
-	float theta = acos((this->dot_product(v))/(this->magnitude() * v.magnitude()));
-	return theta;
-}
-
-vector vector::cross_product(vector v) {
-	//calculate the cross product of this vector with given vector v:
-	vector n;
-	n.x = ((this->y * v.z) - (this->z * v.y));
-	n.y = -1 * ((this->x * v.z) - (this->z * v.x));
-	n.z = ((this->x * v.y) - (this->y * v.x));
-
-	return n;
-}
-
-void vector::convert_to_degrees() {
-
-	this->x = (this->x * 180) / PI;
-	this->y = (this->y * 180) / PI;
-	this->z = (this->z * 180) / PI;
-}
-
-void vector::convert_to_radians() {
-
-	this->x = (this->x * PI) / 180;
-	this->y = (this->y * PI) / 180;
-	this->z = (this->z * PI) / 180;
-}
-
-void vector::set_vector(float vector_array[]) {
-	//Takes a one-dimensional array and converts it to a vector
-
-	this->x = vector_array[0];
-	this->y = vector_array[1];
-	this->z = vector_array[2];
-}
-
-void vector::clear() {
-	//Clear 
-	this->x = 0;
-	this->y = 0;
-	this->z = 0;
 }
 
 
@@ -333,7 +272,7 @@ vector filter::sample_mean(vector input, int n) {
 
 	ringbuffer_dequeue(this->mean_buffer_x);
 	ringbuffer_enqueue(this->mean_buffer_x, input.x);
-	
+
 	ringbuffer_dequeue(this->mean_buffer_y);
 	ringbuffer_enqueue(this->mean_buffer_y, input.y);
 
@@ -367,7 +306,7 @@ vector filter::sample_variance(vector sample_mean, vector sample, int n) {
 	//shift buffer
 	ringbuffer_dequeue(this->variance_buffer_x);
 	ringbuffer_enqueue(this->variance_buffer_x, sample.x);
-	
+
 	//shift buffer
 	ringbuffer_dequeue(this->variance_buffer_y);
 	ringbuffer_enqueue(this->variance_buffer_y, sample.y);
@@ -427,7 +366,7 @@ vector filter::covariance(vector sample_mean, vector sample, int n) {
 }
 
 vector filter::standard_deviation(vector sample_variance) {
-	
+
 	vector std_dev;
 
 	std_dev.x = sqrt(sample_variance.x);
