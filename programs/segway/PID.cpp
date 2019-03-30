@@ -3,6 +3,7 @@
 // 
 
 #include "PID.h"
+#include "ringbuffer.h"
 
 PID::PID() {
 
@@ -10,8 +11,17 @@ PID::PID() {
 	this->error = 0;
 	this->error_final = 0;
 	this->error_integral = 0;
+
+	this->integral_buffer = ringbuffer_new(2);
+	ringbuffer_fill(this->integral_buffer, 0.0f);
 }
 
+/**
+ * @brief  Sets the k constants for the PID loop
+ * @note
+ * @param  kp:proportional constant input, ki:integral constant input, kd:derivative constant input
+ * @retval 
+ */
 void PID::set_k_values(float kp, float ki, float kd) {
 
 	this->kp = kp;
@@ -19,34 +29,26 @@ void PID::set_k_values(float kp, float ki, float kd) {
 	this->kd = kd;
 }
 
-//float PID::measure_sensor() {
-//
-//	int t_initial = micros();
-//	float sensor = analogRead(sensor_pin);
-//	int t_final = micros();
-//
-//	this->delta_t = (t_final - t_initial) / 1000.0;
-//
-//	this->cp = convert_sensor_to_degrees(sensor);
-//
-//	return this->cp;
-//}
-
-//float PID::convert_sensor_to_degrees(int raw) {
-//
-//	float current_point = map(raw, 57, 1023, -57, 237);
-//
-//	return current_point;
-//}
-
+/**
+ * @brief  Calculates the error between setpoint and current point
+ * @note
+ * @param  current_point:Current data point in time, set_point:"heading" for the PID loop
+ * @retval
+ */
 float PID::calculate_error(float current_point, int set_point) {
 	this->set_point = set_point;
 
-	this->error = abs(current_point - this->set_point);
+	this->error = current_point - this->set_point;
 
 	return this->error;
 }
 
+/**
+ * @brief  Calculates the proportional response to the error
+ * @note
+ * @param
+ * @retval
+ */
 float PID::p_loop() {
 
 	float proportion;
@@ -55,8 +57,15 @@ float PID::p_loop() {
 	return proportion;
 }
 
+/**
+ * @brief  Calculates the integral response to the error
+ * @note
+ * @param
+ * @retval
+ */
 float PID::i_loop() {
 
+	/*
 	if (this->current_point > this->set_point) {
 		this->error_integral -= this->ki*this->error*this->delta_t;
 	}
@@ -66,49 +75,59 @@ float PID::i_loop() {
 	else {
 		error_integral = 0;
 	}
-	//this->error_integral = this->ki*this->error_integral;
-
-	/*
-	if(this->error_integral > 256) {
-
-		this->error_integral = 256;
-	}
-	else {
-		this->error_integral = this->error_integral;
-	}
 	*/
-	
+	this->error_integral = this->ki*integrate(this->error, this->delta_t);
 
 	return this->error_integral;
 }
 
+/**
+ * @brief  Calculates an indefinite integral of the given input, starting at t=0 -> t=inf
+ * @note   Uses Midpoint Rectangular Approximation
+ * @param  current_point:Current data point in time, delta:Step size between data points, allowed to change
+ * @retval 
+ */
+float PID::integrate(float current_point, float delta) {
+
+	ringbuffer_dequeue(this->integral_buffer);
+	ringbuffer_enqueue(this->integral_buffer, current_point);
+
+	this->sum += 0.5*(ringbuffer_at(this->integral_buffer, 0) + ringbuffer_at(this->integral_buffer, 1)) * delta;
+
+	return sum;
+}
+
+/**
+ * @brief  Calculates the derivative response to the error
+ * @note
+ * @param
+ * @retval
+ */
 float PID::d_loop() {
 
-	float error_initial = this->error;
-	float error_derivative = this->kd*((this->error_final - error_initial) / this->delta_t);
-	this->error_final = error_initial;
+	this->error_initial = this->error;
+	float error_derivative = this->kd * ((this->error_final - this->error_initial) / this->delta_t);
+	this->error_final = this->error_initial;
 
 	return error_derivative;
 }
 
-float PID::calculate_pid(float current_point, int set_point) {
+/**
+ * @brief  Calculates the total PID response
+ * @note
+ * @param
+ * @retval
+ */
+float PID::calculate_pid(float current_point, int set_point, float _delta_t) {
+
+	this->delta_t = _delta_t;
 
 	this->error = PID::calculate_error(current_point, set_point);
 
-	this->p		= PID::p_loop();
-	this->i		= PID::i_loop();
-	this->d		= PID::d_loop();
-	this->pid	= this->p + this->i;
+	this->p		= p_loop();
+	this->i		= i_loop();
+	this->d		= d_loop();
+	this->pid	= this->p + this->i + this->d;
 
 	return this->pid;
-}
-
-float PID::get_delta_t() {
-
-	return this->delta_t;
-}
-
-int PID::get_error() {
-
-	return this->error;
 }

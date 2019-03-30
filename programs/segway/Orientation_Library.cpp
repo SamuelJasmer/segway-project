@@ -20,16 +20,20 @@ Orientation::Orientation() {
 	this->delta_t = 0;
 }
 
-void Orientation::init() {
+void Orientation::init(bool enable_gyro, bool enable_accelmag) {
 
-	if (!gyro.begin()) {
-		Serial.println("There was a problem detecting the FXAS21002C ... check your connections");
-		while (1);
+	if (enable_gyro) {
+		if (!gyro.begin()) {
+			Serial.println("There was a problem detecting the FXAS21002C ... check your connections");
+			while (1);
+		}
 	}
 
-	if (!accelmag.begin(ACCEL_RANGE_4G)) {
-		Serial.println("There was a problem detecting the FXOS8700 ... check your connections");
-		while (1);
+	if (enable_accelmag) {
+		if (!accelmag.begin(ACCEL_RANGE_4G)) {
+			Serial.println("There was a problem detecting the FXOS8700 ... check your connections");
+			while (1);
+		}
 	}
 
 	this->angular_velocity_initial.x = 0;
@@ -118,12 +122,34 @@ vector Orientation::measure_accelerometer() {
 	accelmag.getEvent(&aevent);
 
 	//read accelerometor sensor:
+	/*
 	int t_initial = micros();
 	float x = aevent.acceleration.x;
 	float y = aevent.acceleration.y;
 	float z = aevent.acceleration.z;
 	int t_final = micros();
 	this->delta_t = (t_final - t_initial);
+
+	if (this->delta_t == 0) {
+		this->delta_t = 1;
+	}
+	*/
+
+	//Measured from calibration curve
+	vector zero_G_Bias;
+	zero_G_Bias.x = 0.0;//-0.1068;
+	zero_G_Bias.y = 0.0;//0.4023;
+	zero_G_Bias.z = 0.0;
+
+	vector sensitivity;
+	sensitivity.x = 1.1;//1.0985;
+	sensitivity.y = 1.0;//1.0745;
+	sensitivity.z = 1.0;
+
+	float x = (aevent.acceleration.x - zero_G_Bias.x) / sensitivity.x;
+	float y = (aevent.acceleration.y - zero_G_Bias.y) / sensitivity.y;
+	float z = (aevent.acceleration.z - zero_G_Bias.z) / sensitivity.z;
+	this->delta_t = 1;//1 microsecond approximately, not sure on an actual time though
 
 	//create acceleration vector:
 	vector accelerometer_vector;
@@ -195,11 +221,6 @@ vector Orientation::integrate_vector(vector u) {
 	return integral_u;
 }
 
-float Orientation::get_delta_t() {
-
-	return this->delta_t;
-}
-
 float Orientation::moving_average_3n(float data_in[3]) {
 	//Calculates the moving average with a sample window of 3 data points
 
@@ -213,7 +234,6 @@ float Orientation::moving_average_3n(float data_in[3]) {
 
 	return MA;
 }
-
 
 /*
  * Filter Methods

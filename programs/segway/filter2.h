@@ -98,6 +98,7 @@ class filter2 {
          * _variance. This assumes that calculate_mean has already been called.
          */
         void calculate_variance();
+		void calculate_variance2();
 
         /**
          * Calculates the covariance of each of the in_buf_* buffers and sets

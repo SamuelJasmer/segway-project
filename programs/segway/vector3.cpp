@@ -1,13 +1,14 @@
 #include "vector3.h"
 
 #include <math.h>
+#include "Arduino.h"
 #ifndef PI
 #define PI 3.14159265358979323846
 #endif
 
 float vector::magnitude() {
 	//calculate the magnitude of this vector:
-	float magnitude = sqrt(pow(this->x, 2) + pow(this->y, 2) + pow(this->z, 2));
+	float magnitude = sqrt(sq(this->x) + sq(this->y) + sq(this->z));
 
 	return magnitude;
 }

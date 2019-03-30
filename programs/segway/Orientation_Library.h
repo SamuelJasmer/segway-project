@@ -25,18 +25,17 @@ class Orientation {
 		vector integrate_vector(vector u);
 		vector smooth_gyro(vector gyro_vector);
 
-		void init();
+		void init(bool enable_gyro, bool enable_accelmag);
 		float calculate_Moment_of_Inertia();
 		float integrate(float u);
-		float get_delta_t();
 		float moving_average_3n(float data_in[3]);
 
 		vector gyro_vector;
 		vector angular_velocity_initial;
 		vector angular_velocity_final;
 
-	private:
 		float delta_t = 0;
+	private:
 };
 
 class filter {

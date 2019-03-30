@@ -14,6 +14,8 @@
 
 #endif
 
+#include "ringbuffer.h"
+
 class PID {
 
 public:
@@ -23,9 +25,8 @@ public:
 	float p_loop();
 	float i_loop();
 	float d_loop();
-	float calculate_pid(float current_point, int set_point);
-	float get_delta_t();
-	int get_error();
+	float calculate_pid(float current_point, int set_point, float delta_t);
+	float integrate(float current_point, float delta);
 	
 	float kp;
 	float ki;
@@ -37,19 +38,24 @@ public:
 	float i = 0;
 	float d = 0;
 	float pid = 0;
+	float sum = 0;
 
 	float output_initial = 0;
 	float output_final = 0;
 
 	float current_point = 0;
 
-	int error = 0;
+	
 	
 
 private:
+	int error = 0;
 	float delta_t = 0;
 	float output_delta_t = 1;
-	
-	int error_final = 0;
+
+	float error_initial = 0;
+	float error_final = 0;
 	float error_integral = 0;
+
+	RingBuffer* integral_buffer;
 };

@@ -44,6 +44,6 @@ void L298N::stop() {
 	digitalWrite(this->IN2, HIGH);
 }
 
-void L298N::set_speed(float speed) {
+void L298N::set_speed(uint8_t speed) {
 	analogWrite(this->ENABLE, speed);
 }

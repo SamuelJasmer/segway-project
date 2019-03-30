@@ -66,7 +66,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\segway;$(ProjectDir)..\..\..\..\..\AppData\Local\arduino15\packages\chipKIT\hardware\pic32\2.0.5\libraries\Wire;$(ProjectDir)..\..\..\..\Arduino\libraries\Adafruit_Sensor-master;$(ProjectDir)..\..\..\..\Arduino\libraries\Adafruit_FXOS8700-master;$(ProjectDir)..\..\..\..\Arduino\libraries\Adafruit_FXAS21002C-master;$(ProjectDir)..\..\..\..\..\..\..\Program Files (x86)\Arduino\libraries;$(ProjectDir)..\..\..\..\Arduino\libraries;$(ProjectDir)..\..\..\..\..\AppData\Local\arduino15\packages\chipKIT\hardware\pic32\2.0.5\libraries;$(ProjectDir)..\..\..\..\..\AppData\Local\arduino15\packages\chipKIT\hardware\pic32\2.0.5\cores\pic32;$(ProjectDir)..\..\..\..\..\AppData\Local\arduino15\packages\chipKIT\hardware\pic32\2.0.5\cores\pic32\avr;$(ProjectDir)..\..\..\..\..\AppData\Local\arduino15\packages\chipKIT\hardware\pic32\2.0.5\cores\pic32\pps;$(ProjectDir)..\..\..\..\..\AppData\Local\arduino15\packages\chipKIT\hardware\pic32\2.0.5\cores\pic32\util;$(ProjectDir)..\..\..\..\..\AppData\Local\arduino15\packages\chipKIT\hardware\pic32\2.0.5\variants\WiFire;$(ProjectDir)..\..\..\..\..\AppData\Local\arduino15\packages\chipKIT\tools\pic32-tools\1.43-pic32gcc\pic32mx\include;$(ProjectDir)..\..\..\..\..\AppData\Local\arduino15\packages\chipKIT\hardware\pic32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\segway;$(ProjectDir)..\..\..\..\..\AppData\Local\arduino15\packages\chipKIT\hardware\pic32\2.0.5\libraries\SPI;$(ProjectDir)..\..\..\..\Arduino\libraries\Adafruit_Sensor-master;$(ProjectDir)..\..\..\..\Arduino\libraries\Adafruit_FXOS8700-master;$(ProjectDir)..\..\..\..\..\AppData\Local\arduino15\packages\chipKIT\hardware\pic32\2.0.5\libraries\Wire;$(ProjectDir)..\..\..\..\Arduino\libraries\Adafruit_FXAS21002C-master;$(ProjectDir)..\..\..\..\..\..\..\Program Files (x86)\Arduino\libraries;$(ProjectDir)..\..\..\..\Arduino\libraries;$(ProjectDir)..\..\..\..\..\AppData\Local\arduino15\packages\chipKIT\hardware\pic32\2.0.5\libraries;$(ProjectDir)..\..\..\..\..\AppData\Local\arduino15\packages\chipKIT\hardware\pic32\2.0.5\cores\pic32;$(ProjectDir)..\..\..\..\..\AppData\Local\arduino15\packages\chipKIT\hardware\pic32\2.0.5\cores\pic32\avr;$(ProjectDir)..\..\..\..\..\AppData\Local\arduino15\packages\chipKIT\hardware\pic32\2.0.5\cores\pic32\pps;$(ProjectDir)..\..\..\..\..\AppData\Local\arduino15\packages\chipKIT\hardware\pic32\2.0.5\cores\pic32\util;$(ProjectDir)..\..\..\..\..\AppData\Local\arduino15\packages\chipKIT\hardware\pic32\2.0.5\variants\WiFire;$(ProjectDir)..\..\..\..\..\AppData\Local\arduino15\packages\chipKIT\tools\pic32-tools\1.43-pic32gcc\pic32mx\include;$(ProjectDir)..\..\..\..\..\AppData\Local\arduino15\packages\chipKIT\hardware\pic32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>$(ProjectDir)__vm\.segway.vsarduino.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <IgnoreStandardIncludePath>false</IgnoreStandardIncludePath>
       <PreprocessorDefinitions>__PIC32_32MZ2048EFG100__;_VMDEBUG=1;ARDUINO_ARCH_PIC32;F_CPU=200000000UL;ARDUINO=10806;_BOARD_WIFIRE_;MPIDEVER=16777998;MPIDE=150;IDE=Arduino;__cplusplus=201103L;_VMICRO_INTELLISENSE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -84,6 +84,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="filter2.h" />
     <ClInclude Include="L298N.h">
       <FileType>CppCode</FileType>
     </ClInclude>
@@ -97,14 +98,17 @@
       <FileType>CppCode</FileType>
     </ClInclude>
     <ClInclude Include="ringbuffer.h" />
+    <ClInclude Include="vector3.h" />
     <ClInclude Include="__vm\.segway.vsarduino.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="filter2.cpp" />
     <ClCompile Include="L298N.cpp" />
     <ClCompile Include="matrix.cpp" />
     <ClCompile Include="Orientation_Library.cpp" />
     <ClCompile Include="PID.cpp" />
     <ClCompile Include="ringbuffer.cpp" />
+    <ClCompile Include="vector3.cpp" />
   </ItemGroup>
   <PropertyGroup>
     <DebuggerFlavor>VisualMicroDebugger</DebuggerFlavor>

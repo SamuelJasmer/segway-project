@@ -23,7 +23,7 @@ public:
 	void forward();
 	void reverse();
 	void stop();
-	void set_speed(float speed);
+	void set_speed(uint8_t speed);
 
 private:
 	int ENABLE;

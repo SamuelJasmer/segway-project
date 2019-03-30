@@ -1,8 +1,10 @@
 #include "filter2.h"
 
 #include <math.h>
+#include "Arduino.h"
 #include "matrix.h"
 #include "vector3.h"
+#include "stdlib.h"
 
 bool filter2::init(int buffer_size) {
 
@@ -182,7 +184,7 @@ vector filter2::lowess_smooth() {
 //region Private Calculations
 void filter2::calculate_mean() {
     vector sum;
-    sum.clear;
+    sum.clear();
     for (int i = 0; i < this->_buffer_size; i++) {
         sum.x += ringbuffer_at(this->in_buf_x, i);
         sum.y += ringbuffer_at(this->in_buf_y, i);
@@ -198,9 +200,9 @@ void filter2::calculate_variance() {
     vector sum;
 	sum.clear();
 	for (int i = 0; i < this->_buffer_size; i++) {
-		sum.x += pow((ringbuffer_at(this->in_buf_x, i) - this->_mean.x), 2);
-		sum.y += pow((ringbuffer_at(this->in_buf_y, i) - this->_mean.y), 2);
-		sum.z += pow((ringbuffer_at(this->in_buf_z, i) - this->_mean.z), 2);
+		sum.x += sq((ringbuffer_at(this->in_buf_x, i) - this->_mean.x));
+		sum.y += sq((ringbuffer_at(this->in_buf_y, i) - this->_mean.y));
+		sum.z += sq((ringbuffer_at(this->in_buf_z, i) - this->_mean.z));
 	}
 
     this->_variance.x = sum.x / (this->_buffer_size - 1);
@@ -208,18 +210,35 @@ void filter2::calculate_variance() {
     this->_variance.z = sum.z / (this->_buffer_size - 1);
 }
 
+void filter2::calculate_variance2() {
+	float n = _buffer_size;
+
+	vector sum;
+	sum.clear();
+	for (int i = 0; i < this->_buffer_size; i++) {
+		sum.x += sq(ringbuffer_at(this->in_buf_x, i));
+		sum.y += sq(ringbuffer_at(this->in_buf_y, i));
+		sum.z += sq(ringbuffer_at(this->in_buf_z, i));
+	}
+
+	this->_variance.x = (sum.x - (n * sq(this->_mean.x))) / (n - 1);
+	this->_variance.y = (sum.x - (n * sq(this->_mean.y))) / (n - 1);
+	this->_variance.z = (sum.x - (n * sq(this->_mean.z))) / (n - 1);
+
+}
+
 void filter2::calculate_covariance() {
     vector sum;
 	sum.clear();
 	for (int i = 0; i < this->_buffer_size; i++) {
-		sum.x += pow((ringbuffer_at(this->in_buf_x, i) - this->_mean.x) * (i - this->_average_n), 2);
-		sum.y += pow((ringbuffer_at(this->in_buf_y, i) - this->_mean.y) * (i - this->_average_n), 2);
-		sum.z += pow((ringbuffer_at(this->in_buf_z, i) - this->_mean.z) * (i - this->_average_n), 2);
+		sum.x += sq((ringbuffer_at(this->in_buf_x, i) - this->_mean.x) * (i - this->_average_n));
+		sum.y += sq((ringbuffer_at(this->in_buf_y, i) - this->_mean.y) * (i - this->_average_n));
+		sum.z += sq((ringbuffer_at(this->in_buf_z, i) - this->_mean.z) * (i - this->_average_n));
 	}
 
-    this->_variance.x = sum.x / (this->_buffer_size - 1);
-    this->_variance.y = sum.y / (this->_buffer_size - 1);
-    this->_variance.z = sum.z / (this->_buffer_size - 1);
+    this->_covariance.x = sum.x / (this->_buffer_size - 1);
+    this->_covariance.y = sum.y / (this->_buffer_size - 1);
+    this->_covariance.z = sum.z / (this->_buffer_size - 1);
 }
 
 void filter2::calculate_standard_deviation() {
