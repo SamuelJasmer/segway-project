@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26730.16
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "segway", "segway.vcxproj", "{C5F80730-F44F-4478-BDAE-6634EFC2CA88}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "segway", "segway.vcxproj", "{63512607-9502-49BF-9650-7F243D81EAB6}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HID", "..\..\..\..\..\AppData\Local\arduino15\packages\arduino\hardware\samd\1.6.18\libraries\HID\HID.vcxitems", "{D11F78C0-BCA4-444C-A3A7-F7148DF9A196}"
 EndProject
@@ -11,16 +11,32 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ArduinoCrashMonitor-master"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "memory_count", "..\memory_count\memory_count.vcxproj", "{367D3706-BF0C-47B2-85DC-FD0649CC5336}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Adafruit_FXAS21002C-1.2.1", "..\..\..\..\Arduino\libraries\Adafruit_FXAS21002C\Adafruit_FXAS21002C-1.2.1.vcxitems", "{FA085248-9DA8-4C7F-BAED-E7517122717D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Adafruit_FXOS8700-1.3.0", "..\..\..\..\Arduino\libraries\Adafruit_FXOS8700\Adafruit_FXOS8700-1.3.0.vcxitems", "{D4BD345F-DF8C-4D0C-9E1D-90FEBBF09B4F}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Adafruit_Sensor_Lab-0.3.3", "..\..\..\..\Arduino\libraries\Adafruit_Sensor_Lab\Adafruit_Sensor_Lab-0.3.3.vcxitems", "{86664ACC-0B1A-45D4-B995-164866BB8272}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Adafruit_Unified_Sensor-1.1.2", "..\..\..\..\Arduino\libraries\Adafruit_Unified_Sensor\Adafruit_Unified_Sensor-1.1.2.vcxitems", "{FD4EF3E1-E903-4D61-94E6-A76A6C05454E}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		..\..\..\..\Arduino\libraries\Adafruit_FXAS21002C\Adafruit_FXAS21002C-1.2.1.vcxitems*{63512607-9502-49bf-9650-7f243d81eab6}*SharedItemsImports = 4
+		..\..\..\..\Arduino\libraries\Adafruit_FXOS8700\Adafruit_FXOS8700-1.3.0.vcxitems*{63512607-9502-49bf-9650-7f243d81eab6}*SharedItemsImports = 4
+		..\..\..\..\Arduino\libraries\Adafruit_Sensor_Lab\Adafruit_Sensor_Lab-0.3.3.vcxitems*{86664acc-0b1a-45d4-b995-164866bb8272}*SharedItemsImports = 9
+		..\..\..\..\Arduino\libraries\Adafruit_FXOS8700\Adafruit_FXOS8700-1.3.0.vcxitems*{d4bd345f-df8c-4d0c-9e1d-90febbf09b4f}*SharedItemsImports = 9
+		..\..\..\..\Arduino\libraries\Adafruit_FXAS21002C\Adafruit_FXAS21002C-1.2.1.vcxitems*{fa085248-9da8-4c7f-baed-e7517122717d}*SharedItemsImports = 9
+		..\..\..\..\Arduino\libraries\Adafruit_Unified_Sensor\Adafruit_Unified_Sensor-1.1.2.vcxitems*{fd4ef3e1-e903-4d61-94e6-a76a6c05454e}*SharedItemsImports = 9
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Debug|x86.ActiveCfg = Debug|Win32
-		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Debug|x86.Build.0 = Debug|Win32
-		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|x86.ActiveCfg = Release|Win32
-		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|x86.Build.0 = Release|Win32
+		{63512607-9502-49BF-9650-7F243D81EAB6}.Debug|x86.ActiveCfg = Debug|Win32
+		{63512607-9502-49BF-9650-7F243D81EAB6}.Debug|x86.Build.0 = Debug|Win32
+		{63512607-9502-49BF-9650-7F243D81EAB6}.Release|x86.ActiveCfg = Release|Win32
+		{63512607-9502-49BF-9650-7F243D81EAB6}.Release|x86.Build.0 = Release|Win32
 		{367D3706-BF0C-47B2-85DC-FD0649CC5336}.Debug|x86.ActiveCfg = Debug|Win32
 		{367D3706-BF0C-47B2-85DC-FD0649CC5336}.Debug|x86.Build.0 = Debug|Win32
 		{367D3706-BF0C-47B2-85DC-FD0649CC5336}.Release|x86.ActiveCfg = Release|Win32

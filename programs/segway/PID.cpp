@@ -7,7 +7,7 @@
 
 PID::PID() {
 
-	this->delta_t = 0;
+	this->delta_t = 1;
 	this->error = 0;
 	this->error_final = 0;
 	this->error_integral = 0;
@@ -35,12 +35,10 @@ void PID::set_k_values(float kp, float ki, float kd) {
  * @param  current_point:Current data point in time, set_point:"heading" for the PID loop
  * @retval
  */
-float PID::calculate_error(float current_point, int set_point) {
+void PID::calculate_error(float current_point, float set_point) {
+	
 	this->set_point = set_point;
-
 	this->error = current_point - this->set_point;
-
-	return this->error;
 }
 
 /**
@@ -49,12 +47,9 @@ float PID::calculate_error(float current_point, int set_point) {
  * @param
  * @retval
  */
-float PID::p_loop() {
+void PID::p_loop() {
 
-	float proportion;
-	proportion = this->kp*this->error;
-
-	return proportion;
+	this->p = this->kp*this->error;
 }
 
 /**
@@ -63,7 +58,7 @@ float PID::p_loop() {
  * @param
  * @retval
  */
-float PID::i_loop() {
+void PID::i_loop() {
 
 	/*
 	if (this->current_point > this->set_point) {
@@ -76,9 +71,9 @@ float PID::i_loop() {
 		error_integral = 0;
 	}
 	*/
-	this->error_integral = this->ki*integrate(this->error, this->delta_t);
+	//this->error_integral = this->ki*integrate(this->error, this->delta_t);
+	this->i += this->ki*this->error;
 
-	return this->error_integral;
 }
 
 /**
@@ -103,13 +98,12 @@ float PID::integrate(float current_point, float delta) {
  * @param
  * @retval
  */
-float PID::d_loop() {
+void PID::d_loop() {
 
 	this->error_initial = this->error;
-	float error_derivative = this->kd * ((this->error_final - this->error_initial) / this->delta_t);
+	this->d = this->kd * ((this->error_final - this->error_initial) / this->dt);
 	this->error_final = this->error_initial;
 
-	return error_derivative;
 }
 
 /**
@@ -118,15 +112,15 @@ float PID::d_loop() {
  * @param
  * @retval
  */
-float PID::calculate_pid(float current_point, int set_point, float _delta_t) {
+float PID::calculate_pid(float current_point, float set_point, float _delta_t) {
 
 	this->delta_t = _delta_t;
 
-	this->error = PID::calculate_error(current_point, set_point);
+	PID::calculate_error(current_point, set_point);
 
-	this->p		= p_loop();
-	this->i		= i_loop();
-	this->d		= d_loop();
+	p_loop();
+	i_loop();
+	d_loop();
 	this->pid	= this->p + this->i + this->d;
 
 	return this->pid;

@@ -21,20 +21,34 @@ class Orientation {
 		vector measure_gyro();
 		vector measure_accelerometer();
 		vector measure_magnetometer();
+		vector magnetism();
+		void setup_magnetometer();
+		void calibrate_acclerometer();
 		vector angular_acceleration();
 		vector integrate_vector(vector u);
-		vector smooth_gyro(vector gyro_vector);
+		vector get_accel_angles(vector acceleration);
+		vector get_mag_angles(vector magnetism);
+
+
+		//Unit Vectors:
+		vector i_vector;
+		vector j_vector;
+		vector k_vector;
 
 		void init(bool enable_gyro, bool enable_accelmag);
 		float calculate_Moment_of_Inertia();
 		float integrate(float u);
-		float moving_average_3n(float data_in[3]);
 
 		vector gyro_vector;
 		vector angular_velocity_initial;
 		vector angular_velocity_final;
 
 		float delta_t = 0;
+
+		Matrix magnetic_transformation_matrix;
+		Matrix magnetic_offset_matrix;
+		Matrix magnetometer_raw;
+		Matrix magnetometer_calibrated;
 	private:
 };
 

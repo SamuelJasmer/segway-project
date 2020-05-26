@@ -4,7 +4,7 @@
     Author:     AD\jasmersr
 */
 
-#include <SPI.h>
+//#include <Adafruit_SensorLab.h>
 #include "PID.h"
 #include "L298N.h"
 #include "Orientation_Library.h"
@@ -24,6 +24,9 @@
 #define IN_B1	 6
 #define ENB		 5
 
+#define ENABLE_Sensor 1
+#define ENABLE_Potentiometer 0
+
 L298N MotorB(ENB, IN_B1, IN_B2);
 L298N MotorA(ENA, IN_A1, IN_A2);
 
@@ -33,11 +36,6 @@ Orientation segway_orientation;
 //Instantiate filter:
 filter2 accelerometer_filter;
 filter2 magnetometer_filter;
-
-//Unit Vectors:
-vector i_vector;
-vector j_vector;
-vector k_vector;
 
 //Acceleration Vectors:
 vector acceleration;
@@ -56,19 +54,16 @@ vector zero_point;
 vector magnetism;
 vector mag_angles;
 
-//Sensor Smoothing Vectors:
-const int n = 10; //size of buffers
-
-//Magnetic Calibration Matricies:
-Matrix magnetic_transformation_matrix;
-Matrix magnetic_offset_matrix;
-Matrix magnetometer_raw;
-Matrix magnetometer_calibrated;
+//Size of buffers
+const int n = 10; 
 
 //Instantiate PID Object:
 PID pid;
 
-float kp = 1.0;
+float initial_angle_pot = 0;
+float initial_velocity_pot = 0;
+
+float kp = 2.0;
 float ki = 0.0;
 float kd = 0.0;
 
@@ -79,17 +74,10 @@ int t_initial = 0;
 
 //Setup Serial Plotter:
 //std::vector<char>* serialInputBuf;
-void checkSerial();
+//void checkSerial();
 //void parseCSV(std::string input, std::vector<std::string>* argv);
 
-
-const int chipSelect = 4;
-
 void setup() {
-	pinMode(chipSelect, OUTPUT);
-	digitalWrite(chipSelect, HIGH);
-
-	SPI.begin();
 
 	Serial.begin(19200);
 	while(!Serial);
@@ -97,31 +85,35 @@ void setup() {
 	//serialInputBuf = new std::vector<char>();
 
 	//Setup Segway:
+#if ENABLE_Sensor == 1
+
+	Serial.println("Sensor Enabled");
 	segway_orientation.init(0,1);
+
 	accelerometer_filter.init(n);
+	magnetometer_filter.init(n);
 
-	float i[]{ 1,0,0 };
-	float j[]{ 0,1,0 };
-	float k[]{ 0,0,1 };
 
-	i_vector.set_vector(i);
-	j_vector.set_vector(j);
-	k_vector.set_vector(k);
+
+	
 
 	//Calibrate Magnetometer
-	setup_magnetometer();
+	//segway_orientation.setup_magnetometer();
 
-	Serial.println("Start Accelerometer Calibration");
-	calibrate_acclerometer();
+	//Serial.println(">>> Start Accelerometer Calibration");
+	//calibrate_acclerometer();
 
-	Serial.println("Continue?");
-	delay(1000);
-	while (digitalRead(PIN_BTN2) == HIGH) {
-		//do nothing
-	}
-	while (digitalRead(PIN_BTN2) == LOW) {
-		//do nothing
-	}
+#elif ENABLE_Sensor == 0
+	Serial.println("Sensor Disabled");
+#endif
+
+	//Serial.println(">>> Sample Data?");
+	//delay(1000);
+
+	//button_wait();
+
+	//sample_data();
+
 
 	//Run Gyroscope Calibration:
 	//Serial.println(F("Calibrating Gyro"));
@@ -135,41 +127,129 @@ void setup() {
 }
 
 void loop() {
-	while (digitalRead(PIN_BTN2) == HIGH) {
-		vector acceleration = segway_orientation.measure_accelerometer();
-		accel_angles = get_accel_angles(acceleration);
-		accelerometer_filter.add_sample(accel_angles);
 
-		Serial.print(acceleration.x);
-		Serial.print(",");
-		Serial.print(acceleration.y);
-		Serial.print(",");
-		Serial.print(accel_angles.x);
-		Serial.print(",");
-		Serial.print(accel_angles.y);
-		Serial.println();
+#if ENABLE_Potentiometer == 1
+	int t_initial = micros();
+	float angle_pot = angular_position_pot();
+	int t_final = micros();
+	int delta_t = t_final - t_initial;
+
+	Serial.print(angle_pot);
+	Serial.print(",");
+
+	float velocity_pot = angular_velocity_pot(angle_pot, delta_t);
+
+	Serial.print(velocity_pot);
+	Serial.print(",");
+
+	int acceleration_pot = angular_acceleration_pot(velocity_pot, delta_t);
+
+	Serial.print(acceleration_pot);
+	Serial.println();
+#elif ENABLE_Potentiometer == 0
+
+#endif
+
+#if ENABLE_Sensor == 1
+	//ACCELERATION CALCLUATIONS
+	vector acceleration = segway_orientation.measure_accelerometer();
+	accel_angles = segway_orientation.get_accel_angles(acceleration);
+	accelerometer_filter.add_sample(accel_angles);
+	accel_angles = accelerometer_filter.sample_mean();
+
+	//MAGNETISM CALCULATIONS
+	//vector magnet = segway_orientation.measure_magnetometer();
+	//mag_angles = segway_orientation.get_mag_angles(magnet);
+	//magnetometer_filter.add_sample(mag_angles);
+	//mag_angles = magnetometer_filter.sample_mean();
+
+	//PRINTS
+	if (millis() % 10 == 0) {
+		#define Print_Acceleration 0
+		#if Print_Acceleration == 1
+			Serial.print(acceleration.x);
+			Serial.print(",");
+			Serial.print(acceleration.y);
+			Serial.print(",");
+			Serial.print(acceleration.z);
+		#elif Print_Acceleration == 0
+		
+		#endif
+		
+		#define Print_Accel_Angles 0
+		#if Print_Accel_Angles == 1
+			Serial.print(accel_angles.x);
+			Serial.print(",");
+			Serial.print(accel_angles.y);
+			Serial.print(",");
+			Serial.print(accel_angles.z);
+		#elif Print_Accel_Angles == 0
+
+		#endif
+
+		//Serial.println();
 	}
-	while (digitalRead(PIN_BTN2) == LOW) {
+
+	run_PID(accel_angles.y);
+
+
+#elif ENABLE_Sensor == 0
+
+#endif
+	
+	
+}
+
+//
+
+float angular_position_pot() {
+
+	float angle_raw = analogRead(A0);
+	float angle = map(angle_raw, 710, 3285, 0, 180);
+	return angle;
+}
+
+float angular_velocity_pot(float current_angle, int delta_t) {
+
+	float velocity = (current_angle - initial_angle_pot) / delta_t;
+	initial_angle_pot = current_angle;
+	return velocity;
+}
+
+float angular_acceleration_pot(float current_velocity, int delta_t) {
+
+	float acceleration = (current_velocity - initial_velocity_pot) / delta_t;
+	initial_velocity_pot = current_velocity;
+	return acceleration;
+}
+
+void pot_motor_control(float speed) {
+
+	MotorA.forward();
+	MotorA.set_speed(speed);
+}
+
+void button_wait() {
+	while (digitalRead(PIN_BTN1) == HIGH) {
 		//do nothing
 	}
-	
-	vector acceleration = segway_orientation.measure_accelerometer();
-	accel_angles = get_accel_angles(acceleration);
-	accelerometer_filter.add_sample(accel_angles);
-
-	//magnetism = calculate_magnetism();
-	//mag_angles = get_mag_angles(magnetism);
-	//mag_averaged_angles = magnetometer_filter.sample_mean(mag_angles, n);
-	//mag_angles_variance = magnetometer_filter.sample_variance(mag_averaged_angles, mag_angles, mag_angles_variance_buffer, n);
-
-	pid.set_k_values(kp, ki, kd);
-	pid_speed = abs(pid.calculate_pid(accelerometer_filter.sample_mean().y, set_point, segway_orientation.delta_t));
-
-	if (micros() % 10) {
-		Serial.print(accelerometer_filter.sample_mean().y);
-		Serial.print(",");
-		Serial.println(pid_speed);
+	while (digitalRead(PIN_BTN1) == LOW) {
+		//do nothing
 	}
+}
+
+/*
+ *
+ */
+
+void run_PID(float angle) {
+	pid.set_k_values(kp, ki, kd);
+	pid_speed = abs(pid.calculate_pid(angle, set_point, segway_orientation.delta_t));
+
+
+	Serial.print(segway_orientation.delta_t);
+	Serial.print(pid_speed);
+	Serial.println();
 
 	if (pid_speed == 0) {
 		//do nothing, i.e.:stop moving
@@ -195,7 +275,9 @@ void loop() {
 		//do nothing, i.e.:stop moving
 		MotorB.stop();
 	}
-	
+
+
+
 	//vector angular_velocity = segway_orientation.measure_gyro();
 	//vector angular_acceleration = segway_orientation.angular_acceleration();
 	//vector acceleration = segway_orientation.measure_accelerometer();
@@ -207,55 +289,7 @@ void loop() {
 	//vector theta = segway_orientation.integrate_vector(angular_velocity);
 
 	//vector smoothed_angular_velocity = segway_orientation.smooth_gyro(angular_velocity);
-}
 
-/*
- *
- */
-
-void calibrate_acclerometer() {
-
-	int count = 0;
-	int angle[36];
-	float data_x[36];
-	float data_y[36];
-
-	for (int i = 0; i <= 180; i+=5) {
-		while (digitalRead(PIN_BTN1) == HIGH) {
-			//do nothing
-		}
-		while (digitalRead(PIN_BTN1) == LOW) {
-			//do nothing
-		}
-
-		angle[count] = i;
-
-		vector mean_accel;
-		//average measurements
-		for (int j = 0; j < 10; j++) {
-			vector acceleration = segway_orientation.measure_accelerometer();
-			accel_angles = get_accel_angles(acceleration);
-			mean_accel.x += accel_angles.x;
-			mean_accel.y += accel_angles.y;
-		}
-
-		mean_accel.x = mean_accel.x / 10;
-		mean_accel.y = mean_accel.y / 10;
-		
-		data_x[count] = mean_accel.x;
-		data_y[count] = mean_accel.y;
-		
-		Serial.print(angle[count]);
-		Serial.print(",");
-		Serial.print(data_x[count]);
-		Serial.print(",");
-		Serial.print(data_y[count]);
-		Serial.println();
-		delay(1000);
-
-		count++;
-	}
-	Serial.println('end calibration');
 }
 
 void calibrate_gyro() {
@@ -271,70 +305,13 @@ void calibrate_gyro() {
 		sum.x += angular_velocity.x;
 		sum.y += angular_velocity.y;
 		sum.z += angular_velocity.z;
-
+		 
 		zero_point.x = sum.x / n;
 		zero_point.y = sum.y / n;
 		zero_point.z = sum.z / n;
 
 		n++;
 	}
-}
-
-void setup_magnetometer() {
-
-	magnetic_transformation_matrix = Matrix(3, 3);
-	magnetic_offset_matrix = Matrix(3, 1);
-	magnetometer_raw = Matrix(3, 1);
-	magnetometer_calibrated = Matrix(3, 1);
-
-	magnetic_offset_matrix.set(0, 0, 0.0f);
-	magnetic_offset_matrix.set(1, 0, 0.0f);
-	magnetic_offset_matrix.set(2, 0, 0.0f);
-
-	magnetic_transformation_matrix.set(0, new float[3]{ 1.014f, -0.020f, 0.012f });
-	magnetic_transformation_matrix.set(1, new float[3]{ -0.020f, 0.985f, 0.005f });
-	magnetic_transformation_matrix.set(2, new float[3]{ 0.012f, 0.005f, 1.002f });
-}
-
-vector get_accel_angles(vector acceleration) {
-	vector angles;
-	angles.x = acceleration.angle_between_vectors(i_vector);
-	angles.y = acceleration.angle_between_vectors(j_vector);
-	angles.z = acceleration.angle_between_vectors(k_vector);
-
-	angles.convert_to_degrees();
-
-	return angles;
-}
-
-vector calculate_magnetism() {
-	vector magnetism;
-	magnetism = segway_orientation.measure_magnetometer();
-	calibrate_magnetometer(magnetism);
-	magnetism.x = magnetometer_calibrated[0][0];
-	magnetism.y = magnetometer_calibrated[1][0];
-	magnetism.z = magnetometer_calibrated[2][0];
-
-	return magnetism;
-}
-
-void calibrate_magnetometer(vector magnetism) {
-	magnetometer_raw.set(0, 0, magnetism.x);
-	magnetometer_raw.set(1, 0, magnetism.y);
-	magnetometer_raw.set(2, 0, magnetism.z);
-
-	magnetometer_calibrated = magnetic_transformation_matrix * (magnetometer_raw - magnetic_offset_matrix);
-}
-
-vector get_mag_angles(vector magnetism) {
-	vector angles;
-	angles.x = magnetism.angle_between_vectors(i_vector);
-	angles.y = magnetism.angle_between_vectors(j_vector);
-	angles.z = magnetism.angle_between_vectors(k_vector);
-
-	angles.convert_to_degrees();
-
-	return angles;
 }
 
 void calculate_angular_motion() {
@@ -438,37 +415,34 @@ void print_pid_data() {
 }
 */
 
+/*
 void checkSerial()
 {
-	//char c;
-	//while (Serial.available() > 0)
-	//{
-	//	c = (char)Serial.read();
-	//	if (c >= 0x20 && c < 0x7f)
-	//	{
-	//		serialInputBuf->push_back(c);
-	//	}
-	//	else if (c == '\n')
-	//	{
-	//		std::vector<std::string> inputSep;
-	//		std::string input(serialInputBuf->begin(), serialInputBuf->end());
-	//		serialInputBuf->clear();
-	//
-	//
-	//		parseCSV(input, &inputSep);
+	char c;
 
-	//		/*
-	//		if (inputSep.size() >= 3)
-	//		{
-	//			kp = atof(inputSep[0].c_str());
-	//			ki = atof(inputSep[1].c_str());
-	//			kd = atof(inputSep[2].c_str());
-	//		}
-	//		*/
-	//
-	//	}
-	//}
+	while (Serial.available() > 0) {
+		c = (char)Serial.read();
+		if (c >= 0x20 && c < 0x7f) {
+			serialInputBuf->push_back(c);
+		}
+		else if (c == '\n') {
+			std::vector<std::string> inputSep;
+			std::string input(serialInputBuf->begin(), serialInputBuf->end());
+			serialInputBuf->clear();
+	
+	
+			parseCSV(input, &inputSep);
+
+			
+			if (inputSep.size() >= 3) {
+				kp = atof(inputSep[0].c_str());
+				ki = atof(inputSep[1].c_str());
+				kd = atof(inputSep[2].c_str());
+			}
+		}
+	}
 }
+*/
 
 /*
 void parseCSV(std::string input, std::vector<std::string>* argv)

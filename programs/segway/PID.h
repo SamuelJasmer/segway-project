@@ -21,11 +21,11 @@ class PID {
 public:
 	PID();
 	void set_k_values(float kp, float ki, float kd);
-	float calculate_error(float current_point, int set_point);
-	float p_loop();
-	float i_loop();
-	float d_loop();
-	float calculate_pid(float current_point, int set_point, float delta_t);
+	void calculate_error(float current_point, float set_point);
+	void p_loop();
+	void i_loop();
+	void d_loop();
+	float calculate_pid(float current_point, float set_point, float delta_t);
 	float integrate(float current_point, float delta);
 	
 	float kp;
@@ -49,8 +49,9 @@ public:
 	
 
 private:
-	int error = 0;
+	float error = 0;
 	float delta_t = 0;
+	float dt = 0.1;//time step
 	float output_delta_t = 1;
 
 	float error_initial = 0;

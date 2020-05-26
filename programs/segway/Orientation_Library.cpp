@@ -17,7 +17,6 @@ Adafruit_FXOS8700 accelmag = Adafruit_FXOS8700(0x8700A, 0x8700B);
 
 Orientation::Orientation() {
 
-	this->delta_t = 0;
 }
 
 void Orientation::init(bool enable_gyro, bool enable_accelmag) {
@@ -36,6 +35,18 @@ void Orientation::init(bool enable_gyro, bool enable_accelmag) {
 		}
 	}
 
+	//calibrate magnetometer
+	setup_magnetometer();
+
+	float i[]{ 1,0,0 };
+	float j[]{ 0,1,0 };
+	float k[]{ 0,0,1 };
+
+	this->i_vector.set_vector(i);
+	this->j_vector.set_vector(j);
+	this->k_vector.set_vector(k);
+
+	/*
 	this->angular_velocity_initial.x = 0;
 	this->angular_velocity_initial.y = 0;
 	this->angular_velocity_initial.z = 0;
@@ -43,6 +54,7 @@ void Orientation::init(bool enable_gyro, bool enable_accelmag) {
 	this->angular_velocity_final.x = 0;
 	this->angular_velocity_final.y = 0;
 	this->angular_velocity_final.z = 0;
+	*/
 
 	//gyro buffer
 }
@@ -67,31 +79,6 @@ vector Orientation::measure_gyro() {
 	this->gyro_vector.z = z;
 
 	return gyro_vector;
-}
-
-vector Orientation::smooth_gyro(vector gyro_vector) {
-
-	/*this->gyro_buffer_x[2] = gyro_vector.x;
-	this->gyro_buffer_y[2] = gyro_vector.y;
-	this->gyro_buffer_z[2] = gyro_vector.z;
-
-
-
-	averaged_gyro.x = Orientation::moving_average_3n(gyro_buffer_x);
-	averaged_gyro.y = Orientation::moving_average_3n(gyro_buffer_y);
-	averaged_gyro.z = Orientation::moving_average_3n(gyro_buffer_z);
-
-	this->gyro_buffer_x[0] = this->gyro_buffer_x[1];
-	this->gyro_buffer_y[0] = this->gyro_buffer_y[1];
-	this->gyro_buffer_z[0] = this->gyro_buffer_z[1];
-
-	this->gyro_buffer_x[1] = this->gyro_buffer_x[2];
-	this->gyro_buffer_y[1] = this->gyro_buffer_y[2];
-	this->gyro_buffer_z[1] = this->gyro_buffer_z[2];
-*/
-	vector averaged_gyro;
-	return averaged_gyro;
-
 }
 
 vector Orientation::angular_acceleration() {
@@ -121,20 +108,21 @@ vector Orientation::measure_accelerometer() {
 	sensors_event_t aevent;
 	accelmag.getEvent(&aevent);
 
+	//create acceleration vector:
+	vector accelerometer_vector;
+
 	//read accelerometor sensor:
-	/*
 	int t_initial = micros();
-	float x = aevent.acceleration.x;
-	float y = aevent.acceleration.y;
-	float z = aevent.acceleration.z;
+	accelerometer_vector.x = aevent.acceleration.x;
+	accelerometer_vector.y = aevent.acceleration.y;
+	accelerometer_vector.z = aevent.acceleration.z;
 	int t_final = micros();
 	this->delta_t = (t_final - t_initial);
 
 	if (this->delta_t == 0) {
 		this->delta_t = 1;
 	}
-	*/
-
+	
 	//Measured from calibration curve
 	vector zero_G_Bias;
 	zero_G_Bias.x = 0.0;//-0.1068;
@@ -142,23 +130,75 @@ vector Orientation::measure_accelerometer() {
 	zero_G_Bias.z = 0.0;
 
 	vector sensitivity;
-	sensitivity.x = 1.1;//1.0985;
+	sensitivity.x = 1.0;//1.0985;
 	sensitivity.y = 1.0;//1.0745;
 	sensitivity.z = 1.0;
 
-	float x = (aevent.acceleration.x - zero_G_Bias.x) / sensitivity.x;
-	float y = (aevent.acceleration.y - zero_G_Bias.y) / sensitivity.y;
-	float z = (aevent.acceleration.z - zero_G_Bias.z) / sensitivity.z;
-	this->delta_t = 1;//1 microsecond approximately, not sure on an actual time though
-
-	//create acceleration vector:
-	vector accelerometer_vector;
-	accelerometer_vector.x = x;
-	accelerometer_vector.y = y;
-	accelerometer_vector.z = z;
+	accelerometer_vector.x = (accelerometer_vector.x - zero_G_Bias.x) / sensitivity.x;
+	accelerometer_vector.y = (accelerometer_vector.y - zero_G_Bias.y) / sensitivity.y;
+	accelerometer_vector.z = (accelerometer_vector.z - zero_G_Bias.z) / sensitivity.z;
 
 	return accelerometer_vector;
 }
+
+void Orientation::calibrate_acclerometer() {
+
+	int count = 0;
+	int angle[36];
+	float data_x[36];
+	float data_y[36];
+	float data_z[36];
+
+	for (int i = 0; i <= 180; i += 5) {
+		//button_wait();
+
+		angle[count] = i;
+
+		vector mean_accel;
+		//average measurements
+		for (int j = 0; j < 10; j++) {
+			vector acceleration = this->measure_accelerometer();
+			//accel_angles = get_accel_angles(acceleration);
+			mean_accel.x += acceleration.x;
+			mean_accel.y += acceleration.y;
+			mean_accel.z += acceleration.z;
+		}
+
+		mean_accel.x = mean_accel.x / 10;
+		mean_accel.y = mean_accel.y / 10;
+		mean_accel.z = mean_accel.z / 10;
+
+		data_x[count] = mean_accel.x;
+		data_y[count] = mean_accel.y;
+		data_z[count] = mean_accel.z;
+
+		Serial.print(angle[count]);
+		Serial.print(",");
+		Serial.print(data_x[count]);
+		Serial.print(",");
+		Serial.print(data_y[count]);
+		//Serial.print(",");
+		//Serial.print(data_z[count]);
+		Serial.println();
+		delay(800);
+
+		count++;
+	}
+	Serial.println("end calibration");
+}
+
+vector Orientation::get_accel_angles(vector acceleration) {
+	vector angles;
+	angles.x = acceleration.angle_between_vectors(this->i_vector);
+	angles.y = acceleration.angle_between_vectors(this->j_vector);
+	angles.z = acceleration.angle_between_vectors(this->k_vector);
+
+	angles.convert_to_degrees();
+
+	return angles;
+}
+
+
 
 vector Orientation::measure_magnetometer() {
 
@@ -180,8 +220,52 @@ vector Orientation::measure_magnetometer() {
 	magnetometer_vector.y = y;
 	magnetometer_vector.z = z;
 
+	//calibrate magnetometer
+	magnetometer_raw.set(0, 0, magnetometer_vector.x);
+	magnetometer_raw.set(1, 0, magnetometer_vector.y);
+	magnetometer_raw.set(2, 0, magnetometer_vector.z);
+
+	magnetometer_calibrated = magnetic_transformation_matrix * (magnetometer_raw - magnetic_offset_matrix);
+
+	magnetometer_vector.x = magnetometer_calibrated[0][0];
+	magnetometer_vector.y = magnetometer_calibrated[1][0];
+	magnetometer_vector.z = magnetometer_calibrated[2][0];
+
 	return magnetometer_vector;
 }
+
+void Orientation::setup_magnetometer() {
+
+	magnetic_transformation_matrix = Matrix(3, 3);
+	magnetic_offset_matrix = Matrix(3, 1);
+	magnetometer_raw = Matrix(3, 1);
+	magnetometer_calibrated = Matrix(3, 1);
+
+	magnetic_offset_matrix.set(0, 0, 0.0f);
+	magnetic_offset_matrix.set(1, 0, 0.0f);
+	magnetic_offset_matrix.set(2, 0, 0.0f);
+
+	magnetic_transformation_matrix.set(0, new float[3]{ 1.014f, -0.020f, 0.012f });
+	magnetic_transformation_matrix.set(1, new float[3]{ -0.020f, 0.985f, 0.005f });
+	magnetic_transformation_matrix.set(2, new float[3]{ 0.012f, 0.005f, 1.002f });
+}
+
+vector Orientation::magnetism() {
+
+}
+
+vector Orientation::get_mag_angles(vector magnetism) {
+	vector angles;
+	angles.x = magnetism.angle_between_vectors(this->i_vector);
+	angles.y = magnetism.angle_between_vectors(this->j_vector);
+	angles.z = magnetism.angle_between_vectors(this->k_vector);
+
+	angles.convert_to_degrees();
+
+	return angles;
+}
+
+
 
 float Orientation::calculate_Moment_of_Inertia() {
 	//calculate the moment of inertia of the rod:
@@ -219,20 +303,6 @@ vector Orientation::integrate_vector(vector u) {
 	integral_u.z = Orientation::integrate(u.z);
 
 	return integral_u;
-}
-
-float Orientation::moving_average_3n(float data_in[3]) {
-	//Calculates the moving average with a sample window of 3 data points
-
-	const int n = 3;
-	float buffer[n];
-	buffer[0] = data_in[0];
-	buffer[1] = data_in[1];
-	buffer[2] = data_in[2];
-
-	float MA = (buffer[0] + buffer[1] + buffer[2]) / n;
-
-	return MA;
 }
 
 /*
